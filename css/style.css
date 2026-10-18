@@ -271,3 +271,12 @@ td input {
 .mt {
   margin-top: 10px;
 }
+
+.banner{background:var(--b1);color:var(--s)}
+/* Area cetak: berisi hasil ubah sheet Excel -> HTML (js/sheet-html.js); hanya tampil saat mencetak */
+#area-cetak{display:none}
+@media print{
+  header,nav,main{display:none!important}
+  #area-cetak{display:block}
+  #area-cetak tr{page-break-inside:avoid}
+}

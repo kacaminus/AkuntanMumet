@@ -27,6 +27,8 @@ function salin(asal, barisAsal, tujuan, barisTujuan, kolomAwal, kolomAkhir, { ni
 function siapkanSheet(workbook, template, nama, jumlahKolom) {
   const sheet = workbook.addWorksheet(nama);
   sheet.pageSetup = klon(template.pageSetup);
+  sheet.properties.defaultRowHeight = template.properties.defaultRowHeight;
+  sheet.properties.defaultColWidth = template.properties.defaultColWidth;
   for (let c = 1; c <= jumlahKolom; c++) {
     const lebar = template.getColumn(c).width;
     if (lebar) sheet.getColumn(c).width = lebar;
@@ -94,12 +96,15 @@ function isiRab(workbook, T, data) {
   D.getCell('H1').value = data.tglDokumen;
 }
 
-export async function buatRab(ExcelJS, buffer, daftar) {
+/** Menyusun workbook RAB (satu sheet per tanggal). Dipakai untuk unduh Excel dan cetak. */
+export async function rakitRab(ExcelJS, buffer, daftar) {
   const { workbook, template } = await muatTemplate(ExcelJS, buffer);
   daftar.forEach((d) => isiRab(workbook, template, d));
   workbook.removeWorksheet(template.id);
-  return workbook.xlsx.writeBuffer();
+  return workbook;
 }
+
+export const buatRab = async (...args) => (await rakitRab(...args)).xlsx.writeBuffer();
 
 // ======================= PO =======================
 // daftar: [{ sheet, nomor, supplier, alamat, tglKirim:'YYYY-MM-DD', items }]
@@ -146,17 +151,21 @@ function isiPO(workbook, T, data) {
   if (logo) D.addImage(logo.imageId, { tl: logo.range.tl, ext: logo.range.ext });
 }
 
-export async function buatPO(ExcelJS, buffer, daftar) {
+/** Menyusun workbook PO (satu sheet per nota). */
+export async function rakitPO(ExcelJS, buffer, daftar) {
   const { workbook, template } = await muatTemplate(ExcelJS, buffer, '1 SEP'); // sheet contoh PO
   daftar.forEach((d) => isiPO(workbook, template, d));
   const dipakai = new Set(daftar.map((d) => d.sheet));
   [...workbook.worksheets].filter((w) => !dipakai.has(w.name)).forEach((w) => workbook.removeWorksheet(w.id)); // buang contoh + data supplier
-  return workbook.xlsx.writeBuffer();
+  return workbook;
 }
+
+export const buatPO = async (...args) => (await rakitPO(...args)).xlsx.writeBuffer();
 
 // ======================= BPPP =======================
 // data: { periode, pembuat, hari:[{ tanggalTeks, nota:[{ nomor, supplier, items }] }] }
-export async function buatBppp(ExcelJS, buffer, data) {
+/** Menyusun workbook BPPP (satu sheet berisi seluruh bulan). */
+export async function rakitBppp(ExcelJS, buffer, data) {
   const { workbook, template: T } = await muatTemplate(ExcelJS, buffer);
   const D = siapkanSheet(workbook, T, 'BPPP', 10);
   gabung(D, [
@@ -224,7 +233,7 @@ export async function buatBppp(ExcelJS, buffer, data) {
     const sel = D.getCell(row, 3);
     sel.alignment = { ...sel.alignment, shrinkToFit: true, wrapText: false }; // nomor bukti muat 1 baris
     if (awalNota) {
-      D.getCell(row, 3).value = nota.nomor;
+      D.getCell(row, 3).value = nota.nomor || null;
       D.getCell(row, 4).value = nota.supplier;
     }
     D.getCell(row, 5).value = item.uraian;
@@ -248,5 +257,7 @@ export async function buatBppp(ExcelJS, buffer, data) {
   D.getCell(222 + selisih, 8).value = data.pembuat;
 
   workbook.removeWorksheet(T.id);
-  return workbook.xlsx.writeBuffer();
+  return workbook;
 }
+
+export const buatBppp = async (...args) => (await rakitBppp(...args)).xlsx.writeBuffer();

@@ -7,7 +7,14 @@ import { hariIni, maks, pad, ROMAWI } from './utils.js';
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 export const barisKosong = () => ({ uraian: '', qty: '', satuan: '', harga: '' });
-export const draftBaru = (tanggal = hariIni()) => ({ tanggal, supplier: '', alamat: '', baris: [barisKosong()] });
+export const draftBaru = (tanggal = hariIni()) => ({
+  tanggal,
+  supplier: '',
+  alamat: '',
+  bukti: '', // nomor bukti transaksi, diisi manual
+  editId: null, // terisi bila sedang mengedit nota
+  baris: [barisKosong()],
+});
 
 export const state = {
   user: null,
@@ -44,6 +51,25 @@ export const nomorPO = (n) =>
 export const masuk = (email, password) => sb.auth.signInWithPassword({ email, password });
 export const keluar = () => sb.auth.signOut();
 
+// Nomor urut nota per hari (PO_01, PO_02, ...) dan nomor PO per bulan dihitung dari urutan nota yang ada,
+// sehingga bila satu nota dihapus, nota berikutnya otomatis naik menggantikan nomornya.
+export function nomorkanNota(daftar) {
+  const urutan = [...daftar].sort(
+    (a, b) =>
+      a.tanggal.localeCompare(b.tanggal) ||
+      a.urut - b.urut ||
+      String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')),
+  );
+  const perHari = {};
+  const perBulan = {};
+  return urutan.map((n) => {
+    const bulan = n.tanggal.slice(0, 7);
+    perHari[n.tanggal] = (perHari[n.tanggal] ?? 0) + 1;
+    perBulan[bulan] = (perBulan[bulan] ?? 0) + 1;
+    return { ...n, urutAsli: n.urut, urut: perHari[n.tanggal], no_po: perBulan[bulan], bukti: n.bukti ?? '' };
+  });
+}
+
 // ---------- database ----------
 export async function muatData() {
   const [nota, rab, master] = await Promise.all([
@@ -52,7 +78,7 @@ export async function muatData() {
     sb.from('master_extra').select('*').eq('id', 'main').maybeSingle(),
   ]);
   if (nota.error) throw nota.error;
-  state.nota = nota.data;
+  state.nota = nomorkanNota(nota.data);
   state.rab = Object.fromEntries((rab.data ?? []).map((r) => [r.tanggal, r]));
   state.extra = { bahan: master.data?.bahan ?? [], supplier: master.data?.supplier ?? [] };
 }
@@ -64,26 +90,54 @@ export async function simpanNota(draft) {
   if (!draft.supplier.trim() || !items.length) {
     throw new Error('Isi supplier dan minimal satu bahan lengkap (qty & harga).');
   }
-  const bulan = draft.tanggal.slice(0, 7);
-  const urut = urutBerikutnya(draft.tanggal);
-  const nota = {
-    id: `${draft.tanggal}_${pad(urut)}`,
+  const data = {
     tanggal: draft.tanggal,
-    urut,
-    no_po:
-      maks(
-        state.nota.filter((n) => n.tanggal.startsWith(bulan)),
-        'no_po',
-      ) + 1,
     supplier: draft.supplier.trim(),
     alamat: draft.alamat,
+    bukti: draft.bukti.trim(),
     items,
   };
-  const { error } = await sb.from('nota').insert(nota);
-  if (error) throw error;
-  await simpanMasterBaru(nota);
+  const notaHariItu = state.nota.filter((n) => n.tanggal === draft.tanggal && n.id !== draft.editId);
+  let id = draft.editId;
+  if (id) {
+    // mode edit: perbarui nota yang ada
+    const lama = state.nota.find((n) => n.id === id);
+    if (lama && lama.tanggal !== draft.tanggal) data.urut = maks(notaHariItu, 'urutAsli') + 1; // pindah hari -> nota terakhir hari itu
+    const { error } = await sb.from('nota').update(data).eq('id', id);
+    if (error) throw error;
+  } else {
+    id = `${draft.tanggal}_${Date.now().toString(36)}`; // id unik, tidak ikut berubah saat nomor ditata ulang
+    const bulan = draft.tanggal.slice(0, 7);
+    const baru = {
+      id,
+      ...data,
+      urut: maks(notaHariItu, 'urutAsli') + 1,
+      no_po:
+        maks(
+          state.nota.filter((n) => n.tanggal.startsWith(bulan)),
+          'no_po',
+        ) + 1,
+    };
+    const { error } = await sb.from('nota').insert(baru);
+    if (error) throw error;
+  }
+  await simpanMasterBaru(data);
   await muatData();
-  return nota.id;
+  return id;
+}
+
+/** Muat nota ke formulir input untuk diedit. */
+export function mulaiEdit(id) {
+  const nota = state.nota.find((n) => n.id === id);
+  if (!nota) return;
+  state.draft = {
+    tanggal: nota.tanggal,
+    supplier: nota.supplier,
+    alamat: nota.alamat ?? '',
+    bukti: nota.bukti ?? '',
+    editId: nota.id,
+    baris: nota.items.map((i) => ({ uraian: i.uraian, qty: i.qty, satuan: i.satuan, harga: i.harga })),
+  };
 }
 
 // Bahan & supplier yang dipakai di nota diingat (harga terakhir jadi harga standar berikutnya).

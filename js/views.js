@@ -18,7 +18,8 @@ const tombolSheet = (daftar, aktif) =>
         `<button class="${id === aktif ? 'on' : ''}" data-act="pilih" data-id="${esc(id)}">${esc(label)}</button>`,
     )
     .join('')}</div>`;
-const tombolCetak = '<button class="btn" data-act="cetak">Cetak</button>';
+const tombolCetak = (kind, id) =>
+  `<button class="btn" data-act="cetak" data-kind="${kind}" data-id="${esc(id)}">Cetak</button>`;
 const tombolExcel = (kind, bulan, label = 'Unduh Excel') =>
   `<button class="btn g" data-act="unduh" data-kind="${kind}" data-id="${bulan}">${label}</button>`;
 
@@ -46,16 +47,25 @@ function barisInput(b, i) {
 
 export function renderInput() {
   const { draft } = state;
+  const sedangEdit = Boolean(draft.editId);
+  const notaLama = sedangEdit ? state.nota.find((n) => n.id === draft.editId) : null;
   const opsi = (peta) => [...peta.values()].map((x) => `<option value="${esc(x.nama)}">`).join('');
+  const tombolSimpan = sedangEdit
+    ? `<button class="btn" data-act="simpan">Simpan perubahan</button><button class="btn g" data-act="batalEdit">Batal</button>`
+    : `<button class="btn" data-act="simpan">Simpan sebagai PO_${String(urutBerikutnya(draft.tanggal)).padStart(2, '0')}_${draft.tanggal}</button>`;
   return `
     <datalist id="dl-bahan">${opsi(petaBahan())}</datalist>
     <datalist id="dl-supplier">${opsi(petaSupplier())}</datalist>
+    ${sedangEdit ? `<div class="card banner">Sedang mengedit <b>${notaLama ? namaSheet(notaLama) : 'nota'}</b>. Ubah datanya lalu klik "Simpan perubahan".</div>` : ''}
     <div class="card">
       <div class="row">
         <label>Tanggal menu<input type="date" value="${draft.tanggal}" data-chg="tanggal"></label>
         <label>Supplier<input list="dl-supplier" value="${esc(draft.supplier)}" data-inp="supplier" placeholder="pilih / ketik supplier baru"></label>
       </div>
-      <label class="mt">Alamat supplier (untuk di PO)<input id="alamat" value="${esc(draft.alamat)}" data-inp="alamat"></label>
+      <div class="row mt">
+        <label style="flex:2">Alamat supplier (untuk di PO)<input id="alamat" value="${esc(draft.alamat)}" data-inp="alamat"></label>
+        <label>Nomor bukti transaksi (isi manual)<input value="${esc(draft.bukti)}" data-inp="bukti" placeholder="boleh dikosongkan"></label>
+      </div>
     </div>
     <div class="card">
       <table>
@@ -65,7 +75,7 @@ export function renderInput() {
       <p class="r"><b>Total nota: <span id="total-draft">${rupiah(totalDraft(draft))}</span></b></p>
       <div class="row">
         <button class="btn g" data-act="tambahBaris">+ Baris bahan</button>
-        <button class="btn" data-act="simpan">Simpan sebagai PO_${String(urutBerikutnya(draft.tanggal)).padStart(2, '0')}_${draft.tanggal}</button>
+        ${tombolSimpan}
       </div>
       <p class="m"><small>Harga & satuan terisi dari riwayat; ubah bila hari ini berbeda. Setiap nota menjadi satu sheet PO.</small></p>
     </div>`;
@@ -85,7 +95,8 @@ export function renderPO() {
       aktif,
     )}
     <div class="noprint row mt">
-      ${tombolCetak}${tombolExcel('po', nota.tanggal.slice(0, 7), 'Unduh Excel PO bulan ini')}
+      ${tombolCetak('po', nota.id)}${tombolExcel('po', nota.tanggal.slice(0, 7), 'Unduh Excel PO bulan ini')}
+      <button class="btn g" data-act="edit" data-id="${esc(nota.id)}">Edit nota ini</button>
       <button class="btn d" data-act="hapusNota" data-id="${esc(nota.id)}">Hapus nota ini</button>
     </div>
     <div class="sheet sheet-po">
@@ -134,7 +145,7 @@ export function renderRab() {
     <div class="noprint row mt">
       <label>Menu hari ini<input value="${esc(rab.menu)}" data-chg="menu" data-tanggal="${aktif}"></label>
       <div style="align-self:end">
-        ${tombolCetak} <button class="btn g" data-act="salinSiswa" data-tanggal="${aktif}">Salin siswa dari hari sebelumnya</button>
+        ${tombolCetak('rab', aktif)} <button class="btn g" data-act="salinSiswa" data-tanggal="${aktif}">Salin siswa dari hari sebelumnya</button>
         ${tombolExcel('rab', aktif.slice(0, 7), 'Unduh Excel RAB bulan ini')}
       </div>
     </div>
@@ -187,7 +198,7 @@ export function renderBppp() {
       bulan.map((b) => ({ id: b, label: `BPPP_${b}` })),
       aktif,
     )}
-    <div class="noprint row mt">${tombolCetak}${tombolExcel('bppp', aktif, 'Unduh Excel BPPP')}</div>
+    <div class="noprint row mt">${tombolCetak('bppp', aktif)}${tombolExcel('bppp', aktif, 'Unduh Excel BPPP')}</div>
     <div class="sheet mt">
       <div class="kop"><b>${INSTANSI.sppg}<br>BUKU BANTU BAHAN PANGAN</b><br>Periode: ${bulanIndo(aktif)}</div><br>
       <table>

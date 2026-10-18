@@ -49,7 +49,7 @@ export function laporanBppp(bulan) {
       return {
         no: awalHari ? hari : '',
         tanggal: awalHari ? tanggalIndo(n.tanggal) : '',
-        bukti: k === 0 ? nomorPO(n) : '',
+        bukti: k === 0 ? (n.bukti ?? '') : '',
         supplier: k === 0 ? n.supplier : '',
         ...jumlahBaris(i),
         totalHari: awalHari ? totalHari[n.tanggal] : '',

@@ -7,6 +7,7 @@ create table if not exists nota (
   no_po int not null,                  -- nomor PO (urut per bulan)
   supplier text not null,
   alamat text,
+  bukti text,                          -- nomor bukti transaksi, diisi manual
   items jsonb not null,                -- [{uraian, qty, satuan, harga}]
   created_at timestamptz default now()
 );
@@ -16,6 +17,9 @@ create table if not exists rab (
   pagu numeric,                        -- tidak dipakai lagi (pagu dihitung dari jumlah siswa)
   siswa jsonb                          -- jumlah siswa per baris sekolah, diinput manual: [60, 6, 259, ...]
 );
+-- Jika tabel nota sudah ada dari versi sebelumnya, cukup jalankan baris ini:
+alter table nota add column if not exists bukti text;
+
 -- Jika tabel rab sudah ada dari versi sebelumnya, cukup jalankan baris ini:
 alter table rab add column if not exists siswa jsonb;
 

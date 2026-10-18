@@ -11,7 +11,8 @@ Satu input nota -> PO per nota, RAB harian, BPPP bulanan. Data di Supabase, bisa
     js/store.js         state aplikasi + akses database
     js/reports.js       perhitungan PO / RAB / BPPP (dipakai tampilan dan Excel)
     js/views.js         tampilan tiap tab
-    js/excel.js         penghubung data aplikasi -> Excel
+    js/excel.js         penghubung data aplikasi -> Excel dan cetak
+    js/sheet-html.js    mengubah sheet Excel menjadi halaman cetak (format sama dengan contoh)
     js/excel-builder.js pembuat file Excel yang menyalin format dari templates/
     templates/          3 file contoh asli (PO.xlsx, RAB.xlsx, BPPP.xlsx) - JANGAN dihapus
     js/main.js          penghubung: render + penanganan klik/ketik

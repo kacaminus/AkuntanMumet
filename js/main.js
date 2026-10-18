@@ -5,6 +5,7 @@ import {
   hapusNota,
   keluar,
   masuk,
+  mulaiEdit,
   muatData,
   petaBahan,
   petaSupplier,
@@ -13,7 +14,7 @@ import {
   simpanRab,
   state,
 } from './store.js';
-import { unduhExcel } from './excel.js';
+import { cetakExcel, unduhExcel } from './excel.js';
 import { perbaruiRab, renderBppp, renderInput, renderLogin, renderPO, renderRab, totalDraft } from './views.js';
 import { $, rupiah } from './utils.js';
 
@@ -71,9 +72,10 @@ const aksi = {
       render();
     }),
   hapusNota: ({ id }) =>
-    confirm('Hapus nota ini?') &&
+    confirm('Hapus nota ini? Nomor nota berikutnya akan naik menggantikannya.') &&
     jalankan(async () => {
       await hapusNota(id);
+      if (state.draft.editId === id) state.draft = draftBaru(state.draft.tanggal);
       state.pilihan = null;
       render();
     }),
@@ -87,7 +89,16 @@ const aksi = {
       await simpanRab(tanggal, { siswa: [...state.rab[lalu].siswa] });
       render();
     }),
-  cetak: () => window.print(),
+  edit: ({ id }) => {
+    mulaiEdit(id);
+    state.tab = 'input';
+    render();
+  },
+  batalEdit: () => {
+    state.draft = draftBaru(state.draft.tanggal);
+    render();
+  },
+  cetak: ({ kind, id }) => jalankan(() => cetakExcel(kind, id)),
   unduh: ({ kind, id }) => jalankan(() => unduhExcel(kind, id)),
   masuk: () =>
     jalankan(async () => {
@@ -146,6 +157,9 @@ const ketik = {
   },
   alamat: (el) => {
     state.draft.alamat = el.value;
+  },
+  bukti: (el) => {
+    state.draft.bukti = el.value;
   },
   qty: (el, { i }) => ketikAngka('qty', el, i),
   harga: (el, { i }) => ketikAngka('harga', el, i),
