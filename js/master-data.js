@@ -1,4 +1,4 @@
-// Data master awal (dari file BPPP, PO, dan RAB). Bahan/supplier baru disimpan di database.
+// Data master awal (dari file BBBP, PO, dan RAB). Bahan/supplier baru disimpan di database.
 export const BAHAN = [
   { nama: 'Anggur merah', satuan: 'kg', harga: 47000 },
   { nama: 'Apel merah fuji', satuan: 'kg', harga: 26500 },

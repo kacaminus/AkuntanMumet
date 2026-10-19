@@ -2,7 +2,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { SUPABASE_URL, SUPABASE_KEY, INSTANSI } from './config.js';
 import { BAHAN, SUPPLIER } from './master-data.js';
-import { hariIni, maks, pad, ROMAWI } from './utils.js';
+import { akhirBulan, hariIni, maks, pad, ROMAWI } from './utils.js';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -18,13 +18,23 @@ export const draftBaru = (tanggal = hariIni()) => ({
 
 export const state = {
   user: null,
-  tab: 'input', // input | po | rab | bppp | login
+  tab: 'input', // input | po | rab | bbbp | login
   pilihan: null, // id sheet yang sedang dibuka (nota / tanggal / bulan)
+  rentang: null, // rentang tanggal BBBP { dari, sampai }; null = bulan terakhir yang ada datanya
   nota: [],
   rab: {}, // { 'YYYY-MM-DD': { menu, pagu } }
   extra: { bahan: [], supplier: [] }, // master tambahan dari database
   draft: draftBaru(),
 };
+
+/** Rentang tanggal BBBP yang sedang dipilih (bawaan: seluruh bulan terakhir yang ada datanya). */
+export function rentangBbbp() {
+  if (state.rentang) return state.rentang;
+  const tanggal = state.nota.map((n) => n.tanggal).sort();
+  if (!tanggal.length) return { dari: hariIni(), sampai: hariIni() };
+  const bulan = tanggal.at(-1).slice(0, 7);
+  return { dari: `${bulan}-01`, sampai: akhirBulan(bulan) };
+}
 
 // ---------- pencarian & perhitungan ----------
 const gabung = (awal, tambahan) => {

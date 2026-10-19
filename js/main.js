@@ -7,6 +7,7 @@ import {
   masuk,
   mulaiEdit,
   muatData,
+  rentangBbbp,
   petaBahan,
   petaSupplier,
   sb,
@@ -15,15 +16,15 @@ import {
   state,
 } from './store.js';
 import { cetakExcel, unduhExcel } from './excel.js';
-import { perbaruiRab, renderBppp, renderInput, renderLogin, renderPO, renderRab, totalDraft } from './views.js';
-import { $, rupiah } from './utils.js';
+import { perbaruiRab, renderBbbp, renderInput, renderLogin, renderPO, renderRab, totalDraft } from './views.js';
+import { $, akhirBulan, rupiah } from './utils.js';
 
-const TAMPILAN = { login: renderLogin, input: renderInput, po: renderPO, rab: renderRab, bppp: renderBppp };
+const TAMPILAN = { login: renderLogin, input: renderInput, po: renderPO, rab: renderRab, bbbp: renderBbbp };
 const TAB = [
   ['input', 'Input Nota'],
   ['po', 'Nota / PO'],
   ['rab', 'RAB Harian'],
-  ['bppp', 'BPPP'],
+  ['bbbp', 'BBBP'],
 ];
 
 function render() {
@@ -98,6 +99,10 @@ const aksi = {
     state.draft = draftBaru(state.draft.tanggal);
     render();
   },
+  rentangBulan: ({ bulan }) => {
+    state.rentang = { dari: `${bulan}-01`, sampai: akhirBulan(bulan) };
+    render();
+  },
   cetak: ({ kind, id }) => jalankan(() => cetakExcel(kind, id)),
   unduh: ({ kind, id }) => jalankan(() => unduhExcel(kind, id)),
   masuk: () =>
@@ -112,6 +117,18 @@ const aksi = {
 const ubah = {
   tanggal: (el) => {
     state.draft.tanggal = el.value;
+    render();
+  },
+  rentangDari: (el) => {
+    if (!el.value) return;
+    const { sampai } = rentangBbbp();
+    state.rentang = { dari: el.value, sampai: sampai < el.value ? el.value : sampai };
+    render();
+  },
+  rentangSampai: (el) => {
+    if (!el.value) return;
+    const { dari } = rentangBbbp();
+    state.rentang = { dari: dari > el.value ? el.value : dari, sampai: el.value };
     render();
   },
   bahan: (el, { i }) => {

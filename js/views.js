@@ -2,9 +2,9 @@
 // Interaksi memakai atribut data-act / data-chg / data-inp yang ditangani di main.js.
 import { INSTANSI, KOP_PO } from './config.js';
 import { SEKOLAH } from './master-data.js';
-import { laporanBppp, laporanPO, laporanRab } from './reports.js';
-import { namaSheet, notaUrut, petaBahan, petaSupplier, state, urutBerikutnya } from './store.js';
-import { $, bulanIndo, esc, formatDMY, rupiah, tanggalIndo } from './utils.js';
+import { laporanBbbp, laporanPO, laporanRab } from './reports.js';
+import { namaSheet, notaUrut, petaBahan, petaSupplier, rentangBbbp, state, urutBerikutnya } from './store.js';
+import { $, akhirBulan, bulanIndo, esc, formatDMY, rupiah, tanggalIndo } from './utils.js';
 
 const PESAN_KOSONG = '<p class="m">Belum ada nota. Simpan nota dari tab Input Nota.</p>';
 
@@ -183,28 +183,34 @@ export function perbaruiRab(tanggal) {
   $('#rab-status').textContent = rab.pagu && rab.sisa < 0 ? 'MELEBIHI PAGU' : '';
 }
 
-// ---------- BPPP bulanan ----------
-export function renderBppp() {
+// ---------- BBBP (rentang tanggal bebas) ----------
+export function renderBbbp() {
   const bulan = [...new Set(notaUrut().map((n) => n.tanggal.slice(0, 7)))];
   if (!bulan.length) return PESAN_KOSONG;
-  const aktif = aktifAtauTerakhir(bulan);
-  const bppp = laporanBppp(aktif);
+  const { dari, sampai } = rentangBbbp();
+  const bbbp = laporanBbbp(dari, sampai);
+  const idRentang = `${dari}_${sampai}`;
   const baris = (b) => `
-    <tr><td class="c">${b.no}</td><td>${b.tanggal}</td><td>${b.bukti}</td><td>${esc(b.supplier)}</td><td>${esc(b.uraian)}</td>
+    <tr><td class="c">${b.no}</td><td>${b.tanggal}</td><td>${esc(b.bukti)}</td><td>${esc(b.supplier)}</td><td>${esc(b.uraian)}</td>
       <td class="c">${b.qty}</td><td class="c">${esc(b.satuan)}</td><td class="r">${rupiah(b.harga)}</td>
       <td class="r">${rupiah(b.jumlah)}</td><td class="r"><b>${b.totalHari === '' ? '' : rupiah(b.totalHari)}</b></td></tr>`;
+  const pilihBulan = (b) =>
+    `<button class="${dari === `${b}-01` && sampai === akhirBulan(b) ? 'on' : ''}" data-act="rentangBulan" data-bulan="${b}">${bulanIndo(b)}</button>`;
   return `
-    ${tombolSheet(
-      bulan.map((b) => ({ id: b, label: `BPPP_${b}` })),
-      aktif,
-    )}
-    <div class="noprint row mt">${tombolCetak('bppp', aktif)}${tombolExcel('bppp', aktif, 'Unduh Excel BPPP')}</div>
+    <div class="tabs">${bulan.map(pilihBulan).join('')}</div>
+    <div class="noprint row mt">
+      <label>Dari tanggal<input type="date" value="${dari}" data-chg="rentangDari"></label>
+      <label>Sampai tanggal<input type="date" value="${sampai}" data-chg="rentangSampai"></label>
+      <div style="align-self:end">${tombolCetak('bbbp', idRentang)} ${tombolExcel('bbbp', idRentang, 'Unduh Excel BBBP')}</div>
+    </div>
     <div class="sheet mt">
-      <div class="kop"><b>${INSTANSI.sppg}<br>BUKU BANTU BAHAN PANGAN</b><br>Periode: ${bulanIndo(aktif)}</div><br>
+      <div class="kop"><img src="templates/logo.png" alt="" style="float:left;height:64px">
+        <b>${INSTANSI.sppg}</b><br>${INSTANSI.alamat}<br><b>BUKU BANTU BAHAN PANGAN</b><br>Periode: ${esc(bbbp.periode)}</div>
+      <div style="clear:both"></div><br>
       <table>
         <tr><th>No</th><th>Tanggal</th><th>Nomor Bukti Transaksi</th><th>SUPPLIER</th><th>Uraian</th><th>QTY</th><th>SATUAN</th><th>HARGA SATUAN</th><th>TOTAL</th><th>TOTAL PERHARI</th></tr>
-        ${bppp.baris.map(baris).join('')}
-        <tr class="tot"><td colspan="8">TOTAL BULAN INI</td><td class="r">${rupiah(bppp.total)}</td><td></td></tr>
+        ${bbbp.baris.map(baris).join('')}
+        <tr class="tot"><td colspan="8">TOTAL</td><td class="r">${rupiah(bbbp.total)}</td><td></td></tr>
       </table>
     </div>`;
 }

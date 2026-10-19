@@ -206,8 +206,13 @@ export function sheetKeHtml(ws, workbook, opsi = {}) {
   const gambar = ws.getImages?.()[0];
   if (gambar && opsi.logoUrl && k1 === 1 && b1 === 1) {
     const tl = gambar.range.tl;
-    const kiri = lebarKol.slice(1, (tl.nativeCol ?? 0) + 1).reduce((t, x) => t + x, 0) + (tl.nativeColOff ?? 0) / 9525;
-    const atas = (tl.nativeRowOff ?? 0) / 9525;
+    const nKol = tl.nativeCol ?? Math.floor(tl.col ?? 0);
+    const kiri =
+      lebarKol.slice(1, nKol + 1).reduce((t, x) => t + x, 0) +
+      (tl.nativeColOff !== undefined ? tl.nativeColOff / 9525 : ((tl.col ?? 0) % 1) * (lebarKol[nKol + 1] ?? 64));
+    const tinggiBarisAtas =
+      ((ws.getRow(Math.floor(tl.row ?? 0) + 1).height ?? ws.properties.defaultRowHeight ?? 15) * 4) / 3;
+    const atas = tl.nativeRowOff !== undefined ? tl.nativeRowOff / 9525 : ((tl.row ?? 0) % 1) * tinggiBarisAtas;
     logo = `<img src="${opsi.logoUrl}" style="position:absolute;left:${kiri}px;top:${atas}px;width:${gambar.range.ext.width}px;height:${gambar.range.ext.height}px">`;
   }
   const html =

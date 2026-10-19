@@ -40,3 +40,15 @@ export function hariSebelum(iso, jumlah = 1) {
   t.setDate(t.getDate() - jumlah);
   return t.toLocaleDateString('en-CA');
 }
+
+/** '2026-09-01' -> '1 September 2026' */
+export function tanggalPanjang(iso) {
+  const t = keTanggal(iso);
+  return `${t.getDate()} ${BULAN[t.getMonth()]} ${t.getFullYear()}`;
+}
+
+/** 'YYYY-MM' -> tanggal terakhir bulan itu ('YYYY-MM-DD') */
+export function akhirBulan(ym) {
+  const [tahun, bulan] = ym.split('-').map(Number);
+  return `${ym}-${pad(new Date(tahun, bulan, 0).getDate())}`;
+}

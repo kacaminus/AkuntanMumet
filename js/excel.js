@@ -1,15 +1,15 @@
 // Penghubung antara data aplikasi, pembuat Excel (excel-builder.js), dan pencetakan (sheet-html.js).
-// Hasilnya mengikuti tiga file contoh: PO_<BLN>.xlsx, LAPORAN_RAB_<BLN>.xlsx, BPPP_<BLN>.xlsx
+// Hasilnya mengikuti tiga file contoh: PO_<BLN>.xlsx, LAPORAN_RAB_<BLN>.xlsx, BBBP_<BLN>.xlsx
 import { INSTANSI } from './config.js';
-import { buatBppp, buatPO, buatRab, rakitBppp, rakitPO, rakitRab } from './excel-builder.js';
-import { laporanRab } from './reports.js';
+import { buatBbbp, buatPO, buatRab, rakitBbbp, rakitPO, rakitRab } from './excel-builder.js';
+import { laporanBbbp, laporanRab, notaRentang, satuBulanPenuh } from './reports.js';
 import { sheetKeHtml } from './sheet-html.js';
 import { namaSheet, nomorPO, notaUrut, state } from './store.js';
-import { $, bulanIndo, hariIni, hariSebelum, tanggalIndo } from './utils.js';
+import { $, hariIni, hariSebelum, tanggalIndo } from './utils.js';
 
 const SINGKATAN = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
 const MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-const TEMPLATE = { po: 'PO.xlsx', rab: 'RAB.xlsx', bppp: 'BPPP.xlsx' };
+const TEMPLATE = { po: 'PO.xlsx', rab: 'RAB.xlsx', bbbp: 'BBBP.xlsx' };
 const KERTAS_PX = { portrait: [794, 1123], landscape: [1123, 794] }; // A4 pada 96 dpi
 
 const unik = (daftar) => [...new Set(daftar)];
@@ -44,36 +44,49 @@ const dataRab = (tanggal) =>
     };
   });
 
-const dataBppp = (daftar, bulan) => ({
-  periode: `Periode: ${bulanIndo(bulan)}`,
-  pembuat: INSTANSI.pembuat.nama,
-  hari: unik(daftar.map((n) => n.tanggal)).map((tanggal) => ({
-    tanggalTeks: tanggalIndo(tanggal),
-    nota: daftar
-      .filter((n) => n.tanggal === tanggal)
-      .map((n) => ({ nomor: n.bukti, supplier: n.supplier, items: n.items })),
-  })),
-});
+const dataBbbp = (dari, sampai) => {
+  const daftar = notaRentang(dari, sampai);
+  return {
+    periode: `Periode: ${laporanBbbp(dari, sampai).periode}`,
+    alamat: INSTANSI.alamat,
+    pembuat: INSTANSI.pembuat.nama,
+    hari: unik(daftar.map((n) => n.tanggal)).map((tanggal) => ({
+      tanggalTeks: tanggalIndo(tanggal),
+      nota: daftar
+        .filter((n) => n.tanggal === tanggal)
+        .map((n) => ({ nomor: n.bukti, supplier: n.supplier, items: n.items })),
+    })),
+  };
+};
 
 const notaBulan = (bulan) => notaUrut().filter((n) => n.tanggal.startsWith(bulan));
+const pecahRentang = (id) => id.split('_'); // 'YYYY-MM-DD_YYYY-MM-DD' -> [dari, sampai]
 
 // ---------- unduh .xlsx ----------
-/** jenis: 'po' | 'rab' | 'bppp'; bulan: 'YYYY-MM'. Mengembalikan { buffer, nama }. */
-export async function siapkanExcel(jenis, bulan) {
-  const daftar = notaBulan(bulan);
-  if (!daftar.length) throw new Error('Belum ada data pada bulan ini.');
-  const kode = SINGKATAN[Number(bulan.slice(5, 7)) - 1];
+/**
+ * jenis: 'po' | 'rab' (id = 'YYYY-MM') atau 'bbbp' (id = 'YYYY-MM-DD_YYYY-MM-DD', rentang tanggal).
+ * Mengembalikan { buffer, nama }.
+ */
+export async function siapkanExcel(jenis, id) {
   const template = await ambilTemplate(jenis);
-  if (jenis === 'po') return { buffer: await buatPO(ExcelJS, template, dataPO(daftar)), nama: `PO_${kode}.xlsx` };
-  if (jenis === 'rab') {
-    const buffer = await buatRab(ExcelJS, template, dataRab(unik(daftar.map((n) => n.tanggal))));
-    return { buffer, nama: `LAPORAN_RAB_${kode}.xlsx` };
+  if (jenis === 'bbbp') {
+    const [dari, sampai] = pecahRentang(id);
+    if (!notaRentang(dari, sampai).length) throw new Error('Belum ada data pada rentang tanggal ini.');
+    const nama = satuBulanPenuh(dari, sampai)
+      ? `BBBP_${SINGKATAN[Number(dari.slice(5, 7)) - 1]}.xlsx`
+      : `BBBP_${dari}_sd_${sampai}.xlsx`;
+    return { buffer: await buatBbbp(ExcelJS, template, dataBbbp(dari, sampai)), nama };
   }
-  return { buffer: await buatBppp(ExcelJS, template, dataBppp(daftar, bulan)), nama: `BPPP_${kode}.xlsx` };
+  const daftar = notaBulan(id);
+  if (!daftar.length) throw new Error('Belum ada data pada bulan ini.');
+  const kode = SINGKATAN[Number(id.slice(5, 7)) - 1];
+  if (jenis === 'po') return { buffer: await buatPO(ExcelJS, template, dataPO(daftar)), nama: `PO_${kode}.xlsx` };
+  const buffer = await buatRab(ExcelJS, template, dataRab(unik(daftar.map((n) => n.tanggal))));
+  return { buffer, nama: `LAPORAN_RAB_${kode}.xlsx` };
 }
 
-export async function unduhExcel(jenis, bulan) {
-  const { buffer, nama } = await siapkanExcel(jenis, bulan);
+export async function unduhExcel(jenis, id) {
+  const { buffer, nama } = await siapkanExcel(jenis, id);
   const tautan = document.createElement('a');
   tautan.href = URL.createObjectURL(new Blob([buffer], { type: MIME }));
   tautan.download = nama;
@@ -93,7 +106,7 @@ function logoUrl(workbook, ws) {
 }
 
 /**
- * Menyusun HTML + aturan halaman untuk dicetak. jenis: 'po' (id = id nota), 'rab' (id = tanggal), 'bppp' (id = bulan).
+ * Menyusun HTML + aturan halaman untuk dicetak. jenis: 'po' (id = id nota), 'rab' (id = tanggal), 'bbbp' (id = 'dari_sampai').
  * Tampilannya berasal dari sheet Excel yang sama, jadi cetakan = file contoh.
  */
 export async function susunCetak(jenis, id) {
@@ -114,8 +127,11 @@ export async function susunCetak(jenis, id) {
     ];
     blok.forEach((b) => (b.cocokTinggi = true));
   } else {
-    workbook = await rakitBppp(ExcelJS, template, dataBppp(notaBulan(id), id));
-    blok = [sheetKeHtml(workbook.worksheets[0], workbook)];
+    const [dari, sampai] = pecahRentang(id);
+    if (!notaRentang(dari, sampai).length) throw new Error('Belum ada data pada rentang tanggal ini.');
+    workbook = await rakitBbbp(ExcelJS, template, dataBbbp(dari, sampai));
+    const ws = workbook.worksheets[0];
+    blok = [sheetKeHtml(ws, workbook, { logoUrl: logoUrl(workbook, ws) })];
   }
   const { orientasi, margin } = blok[0];
   const [lebarKertas, tinggiKertas] = KERTAS_PX[orientasi];
@@ -124,7 +140,7 @@ export async function susunCetak(jenis, id) {
   const html = blok
     .map((b, i) => {
       // muat satu halaman, dengan ruang cadangan 5% agar tidak ada halaman kosong/terpotong di browser berbeda
-      const skala = Math.min(1, bolehLebar / b.lebar, jenis === 'bppp' ? 1 : (bolehTinggi * 0.95) / b.tinggi);
+      const skala = Math.min(1, bolehLebar / b.lebar, jenis === 'bbbp' ? 1 : (bolehTinggi * 0.95) / b.tinggi);
       return `<div style="${i ? 'page-break-before:always;' : ''}zoom:${skala}">${b.html}</div>`;
     })
     .join('');

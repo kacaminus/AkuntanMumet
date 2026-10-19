@@ -162,12 +162,12 @@ export async function rakitPO(ExcelJS, buffer, daftar) {
 
 export const buatPO = async (...args) => (await rakitPO(...args)).xlsx.writeBuffer();
 
-// ======================= BPPP =======================
+// ======================= BBBP =======================
 // data: { periode, pembuat, hari:[{ tanggalTeks, nota:[{ nomor, supplier, items }] }] }
-/** Menyusun workbook BPPP (satu sheet berisi seluruh bulan). */
-export async function rakitBppp(ExcelJS, buffer, data) {
+/** Menyusun workbook BBBP (satu sheet berisi seluruh bulan). */
+export async function rakitBbbp(ExcelJS, buffer, data) {
   const { workbook, template: T } = await muatTemplate(ExcelJS, buffer);
-  const D = siapkanSheet(workbook, T, 'BPPP', 10);
+  const D = siapkanSheet(workbook, T, 'BBBP_hasil', 10);
   gabung(D, [
     'A1:J1',
     'A2:J2',
@@ -186,6 +186,10 @@ export async function rakitBppp(ExcelJS, buffer, data) {
   ]);
   for (let k = 1; k <= 8; k++) salin(T, k, D, k, 1, 10);
   D.getCell('A5').value = data.periode;
+  D.getCell('A2').value = data.alamat; // alamat kop (satu baris); baris 3 dikosongkan
+  D.getCell('A3').value = null;
+  const logo = T.getImages()[0]; // logo instansi dari template
+  if (logo) D.addImage(logo.imageId, { tl: logo.range.tl, ext: logo.range.ext });
 
   // 1) tentukan baris + gabungan sel; 2) beri gaya dan isi nilai
   const baris = [];
@@ -257,7 +261,8 @@ export async function rakitBppp(ExcelJS, buffer, data) {
   D.getCell(222 + selisih, 8).value = data.pembuat;
 
   workbook.removeWorksheet(T.id);
+  D.name = 'BBBP'; // nama akhir setelah sheet contoh (juga bernama BBBP) dihapus
   return workbook;
 }
 
-export const buatBppp = async (...args) => (await rakitBppp(...args)).xlsx.writeBuffer();
+export const buatBbbp = async (...args) => (await rakitBbbp(...args)).xlsx.writeBuffer();

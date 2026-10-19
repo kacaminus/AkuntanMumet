@@ -1,7 +1,7 @@
-// Menyusun data laporan (PO, RAB, BPPP). Dipakai bersama oleh tampilan dan ekspor Excel.
+// Menyusun data laporan (PO, RAB, BBBP). Dipakai bersama oleh tampilan dan ekspor Excel.
 import { SEKOLAH } from './master-data.js';
 import { namaSheet, nomorPO, notaUrut, state, totalNota } from './store.js';
-import { hariSebelum, tanggalIndo } from './utils.js';
+import { akhirBulan, bulanIndo, hariSebelum, tanggalIndo, tanggalPanjang } from './utils.js';
 
 const jumlahBaris = (i) => ({ ...i, jumlah: i.qty * i.harga });
 
@@ -30,9 +30,14 @@ export function laporanRab(tanggal) {
   return { tanggal, menu: meta.menu ?? '', siswa, pagu, total, sisa: pagu - total, jumlahNota: daftar.length, baris };
 }
 
-// BPPP: urutan belanja sesuai nota; no/tanggal/total harian hanya muncul di baris pertama tiap hari.
-export function laporanBppp(bulan) {
-  const daftar = notaUrut().filter((n) => n.tanggal.startsWith(bulan));
+export const notaRentang = (dari, sampai) => notaUrut().filter((n) => n.tanggal >= dari && n.tanggal <= sampai);
+
+/** true bila rentang tepat satu bulan penuh (mis. 1-30 September). */
+export const satuBulanPenuh = (dari, sampai) => dari.endsWith('-01') && sampai === akhirBulan(dari.slice(0, 7));
+
+// BBBP: urutan belanja sesuai nota pada rentang tanggal; no/tanggal/total harian hanya di baris pertama tiap hari.
+export function laporanBbbp(dari, sampai) {
+  const daftar = notaRentang(dari, sampai);
   const totalHari = {};
   daftar.forEach((n) => (totalHari[n.tanggal] = (totalHari[n.tanggal] ?? 0) + totalNota(n)));
 
@@ -56,5 +61,8 @@ export function laporanBppp(bulan) {
       };
     });
   });
-  return { bulan, baris, total: daftar.reduce((t, n) => t + totalNota(n), 0) };
+  const periode = satuBulanPenuh(dari, sampai)
+    ? bulanIndo(dari.slice(0, 7))
+    : `${tanggalPanjang(dari)} s/d ${tanggalPanjang(sampai)}`;
+  return { dari, sampai, periode, baris, total: daftar.reduce((t, n) => t + totalNota(n), 0) };
 }
