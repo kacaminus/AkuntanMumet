@@ -1,7 +1,7 @@
 // Ganti dua nilai ini dengan milik project Supabase Anda (Project Settings > API).
 // Key "anon" memang boleh publik: data dilindungi login + aturan RLS di schema.sql.
-export const SUPABASE_URL = 'https://cwbtwrmfilretrjcvxhk.supabase.co';
-export const SUPABASE_KEY = 'sb_publishable_eYm9r65rKTs76NkL5UWCAQ_6UgN-cPo';
+export const SUPABASE_URL = 'https://ISI-PROJECT-ANDA.supabase.co';
+export const SUPABASE_KEY = 'ISI-ANON-PUBLIC-KEY';
 
 export const INSTANSI = {
   sppg: 'SPPG SIDOARJO TULANGAN TULANGAN',
