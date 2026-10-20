@@ -38,3 +38,8 @@ atau pakai ekstensi Live Server di VS Code.
   Rentang yang sama dipakai untuk tampilan, **Cetak**, dan **Unduh Excel**.
 - File hasil unduhan: `BBBP_SEP.xlsx` untuk satu bulan penuh, atau `BBBP_2026-09-01_sd_2026-09-15.xlsx` untuk rentang bebas.
 - Logo instansi mengikuti file contoh `templates/BBBP.xlsx`; alamat kop diatur di `js/config.js` (`INSTANSI.alamat`).
+
+## Memilih tanggal (tab Nota / PO dan RAB Harian)
+Satu bilah navigasi: tombol panah (tanggal sebelumnya/berikutnya), pilihan bulan, dan pilihan tanggal.
+Di tab Nota / PO, tombol di bawahnya hanya menampilkan nota pada tanggal yang dipilih (PO_01, PO_02, ...), jadi
+tetap ringkas walaupun nota sudah ratusan.
