@@ -3,14 +3,45 @@
 import { INSTANSI, KOP_PO } from './config.js';
 import { SEKOLAH } from './master-data.js';
 import { laporanBbbp, laporanPO, laporanRab } from './reports.js';
-import { namaSheet, notaUrut, petaBahan, petaSupplier, rentangBbbp, state, urutBerikutnya } from './store.js';
+import {
+  hariAktif,
+  namaSheet,
+  notaUrut,
+  petaBahan,
+  petaSupplier,
+  rentangBbbp,
+  state,
+  tanggalAda,
+  urutBerikutnya,
+} from './store.js';
 import { $, akhirBulan, bulanIndo, esc, formatDMY, rupiah, tanggalIndo } from './utils.js';
 
 const PESAN_KOSONG = '<p class="m">Belum ada nota. Simpan nota dari tab Input Nota.</p>';
 
 export const totalDraft = (draft) => draft.baris.reduce((t, b) => t + (Number(b.qty) || 0) * (Number(b.harga) || 0), 0);
 
-const aktifAtauTerakhir = (ids) => (ids.includes(state.pilihan) ? state.pilihan : ids.at(-1));
+// Navigasi tanggal ringkas: panah sebelumnya/berikutnya + pilihan bulan + pilihan tanggal.
+function navigasiTanggal(aktif) {
+  const tanggal = tanggalAda();
+  const bulan = [...new Set(tanggal.map((t) => t.slice(0, 7)))];
+  const bulanAktif = aktif.slice(0, 7);
+  const i = tanggal.indexOf(aktif);
+  const opsi = (nilai, teks, terpilih) =>
+    `<option value="${nilai}"${nilai === terpilih ? ' selected' : ''}>${teks}</option>`;
+  const jumlahNota = notaUrut().filter((n) => n.tanggal === aktif).length;
+  return `
+    <div class="navtgl noprint">
+      <button class="btn g ikon" data-act="geserHari" data-arah="-1" ${i <= 0 ? 'disabled' : ''} title="Tanggal sebelumnya">&#8249;</button>
+      <select data-chg="pilihBulan" aria-label="Bulan">${bulan.map((b) => opsi(b, bulanIndo(b), bulanAktif)).join('')}</select>
+      <select data-chg="pilihHari" aria-label="Tanggal">${tanggal
+        .filter((t) => t.startsWith(bulanAktif))
+        .map((t) => opsi(t, tanggalIndo(t), aktif))
+        .join('')}</select>
+      <button class="btn g ikon" data-act="geserHari" data-arah="1" ${i >= tanggal.length - 1 ? 'disabled' : ''} title="Tanggal berikutnya">&#8250;</button>
+      <span class="m">${jumlahNota} nota pada tanggal ini</span>
+    </div>`;
+}
+
 const tombolSheet = (daftar, aktif) =>
   `<div class="tabs">${daftar
     .map(
@@ -83,16 +114,17 @@ export function renderInput() {
 
 // ---------- Nota / PO ----------
 export function renderPO() {
-  const daftar = notaUrut();
-  if (!daftar.length) return PESAN_KOSONG;
-  const aktif = aktifAtauTerakhir(daftar.map((n) => n.id));
-  const nota = daftar.find((n) => n.id === aktif);
+  if (!tanggalAda().length) return PESAN_KOSONG;
+  const hari = hariAktif();
+  const harian = notaUrut().filter((n) => n.tanggal === hari);
+  const nota = harian.find((n) => n.id === state.notaId) ?? harian[0];
   const po = laporanPO(nota);
   const { pembuat, mengetahui } = INSTANSI;
   return `
+    ${navigasiTanggal(hari)}
     ${tombolSheet(
-      daftar.map((n) => ({ id: n.id, label: namaSheet(n) })),
-      aktif,
+      harian.map((n) => ({ id: n.id, label: `${namaSheet(n).slice(0, 5)} · ${n.supplier}` })),
+      nota.id,
     )}
     <div class="noprint row mt">
       ${tombolCetak('po', nota.id)}${tombolExcel('po', nota.tanggal.slice(0, 7), 'Unduh Excel PO bulan ini')}
@@ -126,9 +158,8 @@ export function renderPO() {
 
 // ---------- RAB harian ----------
 export function renderRab() {
-  const tanggal = [...new Set(notaUrut().map((n) => n.tanggal))];
-  if (!tanggal.length) return PESAN_KOSONG;
-  const aktif = aktifAtauTerakhir(tanggal);
+  if (!tanggalAda().length) return PESAN_KOSONG;
+  const aktif = hariAktif();
   const rab = laporanRab(aktif);
   const baris = (b) => `
     <tr class="hl"><td class="c">${b.no}</td><td>${esc(b.uraian)}</td><td class="c">${b.qty}</td><td class="c">${esc(b.satuan)}</td>
@@ -138,10 +169,7 @@ export function renderRab() {
       <td class="c w80"><input type="number" min="0" value="${esc(rab.siswa[i] ?? '')}" data-chg="siswa" data-i="${i}" data-tanggal="${aktif}"></td>
       <td class="r">${rupiah(s.pagu)}</td><td class="r" id="jml-${i}">${rupiah((Number(rab.siswa[i]) || 0) * s.pagu)}</td></tr>`;
   return `
-    ${tombolSheet(
-      tanggal.map((t) => ({ id: t, label: `RAB_${t}` })),
-      aktif,
-    )}
+    ${navigasiTanggal(aktif)}
     <div class="noprint row mt">
       <label>Menu hari ini<input value="${esc(rab.menu)}" data-chg="menu" data-tanggal="${aktif}"></label>
       <div style="align-self:end">

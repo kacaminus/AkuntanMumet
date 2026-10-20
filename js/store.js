@@ -19,7 +19,8 @@ export const draftBaru = (tanggal = hariIni()) => ({
 export const state = {
   user: null,
   tab: 'input', // input | po | rab | bbbp | login
-  pilihan: null, // id sheet yang sedang dibuka (nota / tanggal / bulan)
+  hari: null, // tanggal yang sedang dibuka di tab Nota / PO dan RAB (null = tanggal terakhir)
+  notaId: null, // nota yang sedang dibuka pada tanggal itu (null = nota pertama)
   rentang: null, // rentang tanggal BBBP { dari, sampai }; null = bulan terakhir yang ada datanya
   nota: [],
   rab: {}, // { 'YYYY-MM-DD': { menu, pagu } }
@@ -47,6 +48,15 @@ export const petaSupplier = () => gabung(SUPPLIER, state.extra.supplier);
 
 export const notaUrut = () => [...state.nota].sort((a, b) => a.tanggal.localeCompare(b.tanggal) || a.urut - b.urut);
 export const totalNota = (n) => n.items.reduce((t, i) => t + i.qty * i.harga, 0);
+/** Tanggal-tanggal yang punya nota (urut naik). */
+export const tanggalAda = () => [...new Set(notaUrut().map((n) => n.tanggal))];
+
+/** Tanggal yang sedang dibuka di tab Nota / PO dan RAB (bawaan: tanggal terakhir yang ada notanya). */
+export function hariAktif() {
+  const tanggal = tanggalAda();
+  return tanggal.includes(state.hari) ? state.hari : tanggal.at(-1);
+}
+
 export const namaSheet = (n) => `PO_${pad(n.urut)}_${n.tanggal}`;
 export const urutBerikutnya = (tanggal) =>
   maks(

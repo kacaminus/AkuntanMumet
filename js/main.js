@@ -2,6 +2,7 @@
 import {
   barisKosong,
   draftBaru,
+  hariAktif,
   hapusNota,
   keluar,
   masuk,
@@ -14,6 +15,7 @@ import {
   simpanNota,
   simpanRab,
   state,
+  tanggalAda,
 } from './store.js';
 import { cetakExcel, unduhExcel } from './excel.js';
 import { perbaruiRab, renderBbbp, renderInput, renderLogin, renderPO, renderRab, totalDraft } from './views.js';
@@ -49,11 +51,18 @@ async function jalankan(proses) {
 const aksi = {
   tab: ({ tab }) => {
     state.tab = tab;
-    state.pilihan = null;
     render();
   },
   pilih: ({ id }) => {
-    state.pilihan = id;
+    state.notaId = id;
+    render();
+  },
+  geserHari: ({ arah }) => {
+    const tanggal = tanggalAda();
+    const ke = tanggal[tanggal.indexOf(hariAktif()) + Number(arah)];
+    if (!ke) return;
+    state.hari = ke;
+    state.notaId = null;
     render();
   },
   tambahBaris: () => {
@@ -69,7 +78,7 @@ const aksi = {
     jalankan(async () => {
       const id = await simpanNota(state.draft);
       state.draft = draftBaru(state.draft.tanggal);
-      Object.assign(state, { tab: 'po', pilihan: id });
+      Object.assign(state, { tab: 'po', hari: state.draft.tanggal, notaId: id });
       render();
     }),
   hapusNota: ({ id }) =>
@@ -77,7 +86,7 @@ const aksi = {
     jalankan(async () => {
       await hapusNota(id);
       if (state.draft.editId === id) state.draft = draftBaru(state.draft.tanggal);
-      state.pilihan = null;
+      state.notaId = null;
       render();
     }),
   salinSiswa: ({ tanggal }) =>
@@ -117,6 +126,18 @@ const aksi = {
 const ubah = {
   tanggal: (el) => {
     state.draft.tanggal = el.value;
+    render();
+  },
+  pilihBulan: (el) => {
+    state.hari = tanggalAda()
+      .filter((t) => t.startsWith(el.value))
+      .at(-1);
+    state.notaId = null;
+    render();
+  },
+  pilihHari: (el) => {
+    state.hari = el.value;
+    state.notaId = null;
     render();
   },
   rentangDari: (el) => {
