@@ -1,7 +1,7 @@
 // Ganti dua nilai ini dengan milik project Supabase Anda (Project Settings > API).
 // Key "anon" memang boleh publik: data dilindungi login + aturan RLS di schema.sql.
-export const SUPABASE_URL = 'https://cwbtwrmfilretrjcvxhk.supabase.co';
-export const SUPABASE_KEY = 'sb_publishable_eYm9r65rKTs76NkL5UWCAQ_6UgN-cPo';
+export const SUPABASE_URL = 'https://ISI-PROJECT-ANDA.supabase.co';
+export const SUPABASE_KEY = 'ISI-ANON-PUBLIC-KEY';
 
 export const INSTANSI = {
   sppg: 'SPPG SIDOARJO TULANGAN TULANGAN',
@@ -14,7 +14,22 @@ export const INSTANSI = {
 };
 
 export const KOP_PO = [
-  'SPPG SIDOARJO TULANGAN TULANGAN',
-  'Jl. Raya Tulangan No 38, Kenongo, Tulangan,',
-  'Kabupaten Sidoarjo, Jawa Timur, Indonesia',
+  'BADAN GIZI NASIONAL (NATIONAL NUTRITION AGENCY)',
+  'Gedung E Kompleks Kementerian Pertanian',
+  'Jalan Harsono RM Nomor 3 Ragunan, Pasar Minggu Jakarta, 12550',
 ];
+
+// Laporan "Anggaran Bahan Makanan": paket MBG dikelompokkan menurut pagu harga per porsi (lihat master-data SEKOLAH).
+export const PAKET = [
+  { nama: 'KECIL', harga: 8000 },
+  { nama: 'BESAR', harga: 10000 },
+];
+
+export const ANGGARAN = {
+  kop: [
+    'Jln Raya Tulangan RT 002 RW 002, Desa Tulangan, Kec. Tulangan (Jl. Raya Tulangan No 38, Kenongo, Tulangan)',
+    'Sidoarjo, Jawa Timur, Indonesia',
+  ],
+  pembuat: 'Ira Sukma Yuliawati, S.Ak.',
+  mengetahui: 'Fany Bella Nur Azizah, S.Farm.',
+};
