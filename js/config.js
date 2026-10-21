@@ -18,3 +18,18 @@ export const KOP_PO = [
   'Gedung E Kompleks Kementerian Pertanian',
   'Jalan Harsono RM Nomor 3 Ragunan, Pasar Minggu Jakarta, 12550',
 ];
+
+// Laporan "Anggaran Bahan Makanan": paket MBG dikelompokkan menurut pagu harga per porsi (lihat master-data SEKOLAH).
+export const PAKET = [
+  { nama: 'KECIL', harga: 8000 },
+  { nama: 'BESAR', harga: 10000 },
+];
+
+export const ANGGARAN = {
+  kop: [
+    'Jl. Raya Tulangan No 38, Kenongo, Tulangan',
+    'Sidoarjo, Jawa Timur, Indonesia',
+  ],
+  pembuat: 'Ira Sukma Yuliawati, S.Ak.',
+  mengetahui: 'Fany Bella Nur Azizah, S.Farm.',
+};
