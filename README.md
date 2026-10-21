@@ -43,3 +43,12 @@ atau pakai ekstensi Live Server di VS Code.
 Satu bilah navigasi: tombol panah (tanggal sebelumnya/berikutnya), pilihan bulan, dan pilihan tanggal.
 Di tab Nota / PO, tombol di bawahnya hanya menampilkan nota pada tanggal yang dipilih (PO_01, PO_02, ...), jadi
 tetap ringkas walaupun nota sudah ratusan.
+
+## Anggaran Bahan Makanan (tab Anggaran)
+- Ringkasan per tanggal yang **diturunkan dari RAB Harian**: jumlah paket KECIL (pagu 8.000) dan BESAR (pagu 10.000) dihitung
+  dari jumlah siswa yang Anda isi di RAB; total anggaran = pagu RAB; realisasi = total belanja hari itu; selisih = anggaran - realisasi.
+- Tanggal yang belum ada nota tetap tampil (sel realisasi/selisih berwarna kuning). Untuk mengisi jumlah siswa hari berikutnya,
+  buka tab RAB Harian, lalu pakai "atau buka tanggal lain".
+- Klik tanggal di tabel untuk membuka RAB Harian tanggal itu. Rentang tanggal sama dengan tab BBBP.
+- Unduh: `ANGGARAN_SEP.xlsx` (satu bulan penuh) atau `ANGGARAN_2026-09-14_sd_2026-09-25.xlsx` (rentang bebas).
+- Kop dan logo disalin dari `templates/BBBP.xlsx`; kop (alamat 2 baris) dan nama penanda tangan ada di `js/config.js` (`ANGGARAN`).

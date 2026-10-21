@@ -52,3 +52,16 @@ export function akhirBulan(ym) {
   const [tahun, bulan] = ym.split('-').map(Number);
   return `${ym}-${pad(new Date(tahun, bulan, 0).getDate())}`;
 }
+
+/** '2026-09-14','2026-09-25' -> '14 - 25 SEPTEMBER 2026' (huruf besar, sesuai judul periode laporan anggaran) */
+export function periodeHuruf(dari, sampai) {
+  const a = keTanggal(dari);
+  const b = keTanggal(sampai);
+  const bulan = (t) => BULAN[t.getMonth()].toUpperCase();
+  if (a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()) {
+    return `${a.getDate()} - ${b.getDate()} ${bulan(b)} ${b.getFullYear()}`;
+  }
+  if (a.getFullYear() === b.getFullYear())
+    return `${a.getDate()} ${bulan(a)} - ${b.getDate()} ${bulan(b)} ${b.getFullYear()}`;
+  return `${a.getDate()} ${bulan(a)} ${a.getFullYear()} - ${b.getDate()} ${bulan(b)} ${b.getFullYear()}`;
+}

@@ -1,8 +1,8 @@
 // Tampilan: setiap fungsi render* mengembalikan string HTML untuk area utama.
 // Interaksi memakai atribut data-act / data-chg / data-inp yang ditangani di main.js.
-import { INSTANSI, KOP_PO } from './config.js';
+import { ANGGARAN, INSTANSI, KOP_PO, PAKET } from './config.js';
 import { SEKOLAH } from './master-data.js';
-import { laporanBbbp, laporanPO, laporanRab } from './reports.js';
+import { laporanAnggaran, laporanBbbp, laporanPO, laporanRab } from './reports.js';
 import {
   hariAktif,
   namaSheet,
@@ -12,17 +12,17 @@ import {
   rentangBbbp,
   state,
   tanggalAda,
+  tanggalRab,
   urutBerikutnya,
 } from './store.js';
-import { $, akhirBulan, bulanIndo, esc, formatDMY, rupiah, tanggalIndo } from './utils.js';
+import { $, akhirBulan, bulanIndo, esc, formatDMY, hariIni, rupiah, tanggalIndo } from './utils.js';
 
 const PESAN_KOSONG = '<p class="m">Belum ada nota. Simpan nota dari tab Input Nota.</p>';
 
 export const totalDraft = (draft) => draft.baris.reduce((t, b) => t + (Number(b.qty) || 0) * (Number(b.harga) || 0), 0);
 
 // Navigasi tanggal ringkas: panah sebelumnya/berikutnya + pilihan bulan + pilihan tanggal.
-function navigasiTanggal(aktif) {
-  const tanggal = tanggalAda();
+function navigasiTanggal(aktif, tanggal = tanggalAda(), bukaLain = false) {
   const bulan = [...new Set(tanggal.map((t) => t.slice(0, 7)))];
   const bulanAktif = aktif.slice(0, 7);
   const i = tanggal.indexOf(aktif);
@@ -39,6 +39,7 @@ function navigasiTanggal(aktif) {
         .join('')}</select>
       <button class="btn g ikon" data-act="geserHari" data-arah="1" ${i >= tanggal.length - 1 ? 'disabled' : ''} title="Tanggal berikutnya">&#8250;</button>
       <span class="m">${jumlahNota} nota pada tanggal ini</span>
+      ${bukaLain ? '<label class="inline">atau buka tanggal lain <input type="date" data-chg="bukaTanggal"></label>' : ''}
     </div>`;
 }
 
@@ -158,8 +159,8 @@ export function renderPO() {
 
 // ---------- RAB harian ----------
 export function renderRab() {
-  if (!tanggalAda().length) return PESAN_KOSONG;
-  const aktif = hariAktif();
+  const daftar = tanggalRab();
+  const aktif = hariAktif(daftar) ?? hariIni(); // bisa tanggal tanpa nota (untuk mengisi jumlah siswa lebih dulu)
   const rab = laporanRab(aktif);
   const baris = (b) => `
     <tr class="hl"><td class="c">${b.no}</td><td>${esc(b.uraian)}</td><td class="c">${b.qty}</td><td class="c">${esc(b.satuan)}</td>
@@ -169,7 +170,7 @@ export function renderRab() {
       <td class="c w80"><input type="number" min="0" value="${esc(rab.siswa[i] ?? '')}" data-chg="siswa" data-i="${i}" data-tanggal="${aktif}"></td>
       <td class="r">${rupiah(s.pagu)}</td><td class="r" id="jml-${i}">${rupiah((Number(rab.siswa[i]) || 0) * s.pagu)}</td></tr>`;
   return `
-    ${navigasiTanggal(aktif)}
+    ${navigasiTanggal(aktif, daftar.length ? daftar : [aktif], true)}
     <div class="noprint row mt">
       <label>Menu hari ini<input value="${esc(rab.menu)}" data-chg="menu" data-tanggal="${aktif}"></label>
       <div style="align-self:end">
@@ -240,5 +241,55 @@ export function renderBbbp() {
         ${bbbp.baris.map(baris).join('')}
         <tr class="tot"><td colspan="8">TOTAL</td><td class="r">${rupiah(bbbp.total)}</td><td></td></tr>
       </table>
+    </div>`;
+}
+
+// ---------- Anggaran Bahan Makanan (ringkasan per tanggal, berasal dari RAB Harian) ----------
+const akun = (n) => `<div class="akun"><span>Rp</span><span>${Math.round(n).toLocaleString('id-ID')}</span></div>`;
+
+export function renderAnggaran() {
+  const bulan = [...new Set(tanggalRab().map((t) => t.slice(0, 7)))];
+  const { dari, sampai } = rentangBbbp();
+  const lap = laporanAnggaran(dari, sampai);
+  const idRentang = `${dari}_${sampai}`;
+  const pilihBulan = (b) =>
+    `<button class="${dari === `${b}-01` && sampai === akhirBulan(b) ? 'on' : ''}" data-act="rentangBulan" data-bulan="${b}">${bulanIndo(b)}</button>`;
+  const paket = (h, k) =>
+    `<td>${PAKET[k].nama}</td><td class="kuning c">${h.jumlah[k]}</td><td>${akun(PAKET[k].harga)}</td><td>${akun(h.anggaran[k])}</td>`;
+  const baris = (h) => {
+    const kosong = h.realisasi === null;
+    const kuning = kosong ? ' class="kuning"' : '';
+    return `
+      <tr>
+        <td rowspan="2"><a href="#" class="tgl" data-act="keRab" data-tanggal="${h.tanggal}" title="Buka RAB Harian tanggal ini">${tanggalIndo(h.tanggal)}</a></td>
+        ${paket(h, 0)}
+        <td rowspan="2">${akun(h.totalAnggaran)}</td>
+        <td rowspan="2"${kuning}>${kosong ? '' : akun(h.realisasi)}</td>
+        <td rowspan="2"${kuning}>${akun(h.selisih)}</td>
+        <td rowspan="2"></td>
+      </tr>
+      <tr>${paket(h, 1)}</tr>`;
+  };
+  return `
+    <div class="tabs">${bulan.map(pilihBulan).join('')}</div>
+    <div class="noprint row mt">
+      <label>Dari tanggal<input type="date" value="${dari}" data-chg="rentangDari"></label>
+      <label>Sampai tanggal<input type="date" value="${sampai}" data-chg="rentangSampai"></label>
+      <div style="align-self:end">${tombolCetak('anggaran', idRentang)} ${tombolExcel('anggaran', idRentang, 'Unduh Excel Anggaran')}</div>
+    </div>
+    <p class="m noprint"><small>Jumlah paket diambil dari jumlah siswa yang diisi di tab RAB Harian (klik tanggal untuk membukanya). Realisasi = total belanja hari itu; kuning = belum ada nota.</small></p>
+    <div class="sheet mt">
+      <div class="kop"><img src="templates/logo.png" alt="" style="float:left;height:64px">
+        <b style="font-size:17px">${INSTANSI.sppg}</b><br>${ANGGARAN.kop.join('<br>')}<br>
+        <b style="color:#3d85c6;font-size:15px">ANGGARAN BAHAN MAKANAN</b><br><b>Periode ${lap.periode}</b></div>
+      <div style="clear:both"></div><br>
+      <table class="ang">
+        <tr><th>HARI/TANGGAL</th><th colspan="2">JUMLAH PAKET MBG</th><th>HARGA PAKET</th><th>ANGGARAN</th><th>TOTAL ANGGARAN</th><th>REALISASI</th><th>SELISIH</th><th>KET</th></tr>
+        ${lap.hari.map(baris).join('') || '<tr><td colspan="9" class="c">Belum ada data. Isi jumlah siswa di tab RAB Harian atau simpan nota.</td></tr>'}
+        <tr class="sur"><td colspan="5">SURPLUS/HUTANG</td><td>${akun(lap.total.totalAnggaran)}</td><td>${akun(lap.total.realisasi)}</td><td>${akun(lap.total.selisih)}</td><td></td></tr>
+        <tr class="ptc"><td colspan="5" class="tanpa"></td><td>${akun(lap.total.totalAnggaran)}</td><td>${akun(lap.total.realisasi)}</td><td>${akun(lap.total.selisih)}</td><td class="tanpa"></td></tr>
+      </table>
+      <div class="sig"><div style="margin-left:48%">Dibuat Oleh,<br><br><br><br><b><u>${ANGGARAN.pembuat}</u></b><br>${INSTANSI.pembuat.jabatan}</div>
+        <div>Diketahui Oleh,<br><br><br><br><b><u>${ANGGARAN.mengetahui}</u></b><br>${INSTANSI.mengetahui.jabatan}</div></div>
     </div>`;
 }

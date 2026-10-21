@@ -191,9 +191,12 @@ export function sheetKeHtml(ws, workbook, opsi = {}) {
       ]
         .filter(Boolean)
         .join(';');
-      const dalam = isi.rp
-        ? `<div style="display:flex;justify-content:space-between"><span>Rp</span><span>${esc(isi.teks)}</span></div>`
-        : (isi.html ?? esc(isi.teks));
+      const tengahMeluber = horizontal === 'center' && !bungkus && !g && !isi.rp && !isi.html && isi.teks;
+      const dalam = tengahMeluber
+        ? `<div style="display:flex;justify-content:center"><span style="flex:none">${esc(isi.teks)}</span></div>`
+        : isi.rp
+          ? `<div style="display:flex;justify-content:space-between"><span>Rp</span><span>${esc(isi.teks)}</span></div>`
+          : (isi.html ?? esc(isi.teks));
       const span = `${r2 > r ? ` rowspan="${r2 - r + 1}"` : ''}${c2 > c ? ` colspan="${c2 - c + 1}"` : ''}`;
       sel += `<td${span} style="${css}">${dalam}</td>`;
     }

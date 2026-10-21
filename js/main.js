@@ -16,18 +16,39 @@ import {
   simpanRab,
   state,
   tanggalAda,
+  tanggalRab,
 } from './store.js';
 import { cetakExcel, unduhExcel } from './excel.js';
-import { perbaruiRab, renderBbbp, renderInput, renderLogin, renderPO, renderRab, totalDraft } from './views.js';
+import {
+  perbaruiRab,
+  renderAnggaran,
+  renderBbbp,
+  renderInput,
+  renderLogin,
+  renderPO,
+  renderRab,
+  totalDraft,
+} from './views.js';
 import { $, akhirBulan, rupiah } from './utils.js';
 
-const TAMPILAN = { login: renderLogin, input: renderInput, po: renderPO, rab: renderRab, bbbp: renderBbbp };
+const TAMPILAN = {
+  login: renderLogin,
+  input: renderInput,
+  po: renderPO,
+  rab: renderRab,
+  anggaran: renderAnggaran,
+  bbbp: renderBbbp,
+};
 const TAB = [
   ['input', 'Input Nota'],
   ['po', 'Nota / PO'],
   ['rab', 'RAB Harian'],
+  ['anggaran', 'Anggaran'],
   ['bbbp', 'BBBP'],
 ];
+
+// Daftar tanggal yang dipakai navigasi: tab RAB boleh membuka tanggal tanpa nota, tab PO hanya tanggal bernota.
+const daftarTab = () => (state.tab === 'rab' ? tanggalRab() : tanggalAda());
 
 function render() {
   $('#nav').innerHTML = state.user
@@ -58,8 +79,8 @@ const aksi = {
     render();
   },
   geserHari: ({ arah }) => {
-    const tanggal = tanggalAda();
-    const ke = tanggal[tanggal.indexOf(hariAktif()) + Number(arah)];
+    const tanggal = daftarTab();
+    const ke = tanggal[tanggal.indexOf(hariAktif(tanggal)) + Number(arah)];
     if (!ke) return;
     state.hari = ke;
     state.notaId = null;
@@ -112,6 +133,13 @@ const aksi = {
     state.rentang = { dari: `${bulan}-01`, sampai: akhirBulan(bulan) };
     render();
   },
+  keRab: ({ tanggal }) => {
+    // dari laporan Anggaran: buka RAB Harian pada tanggal yang diklik
+    state.tab = 'rab';
+    state.hari = tanggal;
+    state.notaId = null;
+    render();
+  },
   cetak: ({ kind, id }) => jalankan(() => cetakExcel(kind, id)),
   unduh: ({ kind, id }) => jalankan(() => unduhExcel(kind, id)),
   masuk: () =>
@@ -129,9 +157,15 @@ const ubah = {
     render();
   },
   pilihBulan: (el) => {
-    state.hari = tanggalAda()
+    state.hari = daftarTab()
       .filter((t) => t.startsWith(el.value))
       .at(-1);
+    state.notaId = null;
+    render();
+  },
+  bukaTanggal: (el) => {
+    if (!el.value) return;
+    state.hari = el.value;
     state.notaId = null;
     render();
   },

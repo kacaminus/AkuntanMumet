@@ -1,7 +1,8 @@
 // Menyusun data laporan (PO, RAB, BBBP). Dipakai bersama oleh tampilan dan ekspor Excel.
+import { PAKET } from './config.js';
 import { SEKOLAH } from './master-data.js';
 import { namaSheet, nomorPO, notaUrut, state, totalNota } from './store.js';
-import { akhirBulan, bulanIndo, hariSebelum, tanggalIndo, tanggalPanjang } from './utils.js';
+import { akhirBulan, bulanIndo, hariSebelum, periodeHuruf, tanggalIndo, tanggalPanjang } from './utils.js';
 
 const jumlahBaris = (i) => ({ ...i, jumlah: i.qty * i.harga });
 
@@ -65,4 +66,40 @@ export function laporanBbbp(dari, sampai) {
     ? bulanIndo(dari.slice(0, 7))
     : `${tanggalPanjang(dari)} s/d ${tanggalPanjang(sampai)}`;
   return { dari, sampai, periode, baris, total: daftar.reduce((t, n) => t + totalNota(n), 0) };
+}
+
+/**
+ * Anggaran Bahan Makanan: ringkasan per tanggal yang diturunkan dari RAB Harian.
+ *  - jumlah paket KECIL/BESAR = jumlah siswa (input manual di RAB) yang pagu harganya 8.000 / 10.000
+ *  - total anggaran = jumlah x harga paket (sama dengan PAGU di RAB)
+ *  - realisasi = total belanja hari itu (RAB: TOTAL); kosong bila belum ada nota
+ *  - selisih = total anggaran - realisasi
+ */
+export function laporanAnggaran(dari, sampai) {
+  const adaSiswa = (t) => state.rab[t]?.siswa?.some((x) => Number(x) > 0);
+  const tanggal = [...new Set([...notaUrut().map((n) => n.tanggal), ...Object.keys(state.rab).filter(adaSiswa)])]
+    .filter((t) => t >= dari && t <= sampai)
+    .sort();
+  const hari = tanggal.map((t) => {
+    const rab = laporanRab(t);
+    const jumlah = PAKET.map((p) =>
+      SEKOLAH.reduce((jml, s, i) => jml + (s.pagu === p.harga ? Number(rab.siswa[i]) || 0 : 0), 0),
+    );
+    const anggaran = PAKET.map((p, k) => jumlah[k] * p.harga);
+    const totalAnggaran = anggaran.reduce((a, b) => a + b, 0);
+    const realisasi = rab.jumlahNota ? rab.total : null;
+    return { tanggal: t, jumlah, anggaran, totalAnggaran, realisasi, selisih: totalAnggaran - (realisasi ?? 0) };
+  });
+  const jumlahkan = (kunci) => hari.reduce((t, h) => t + (h[kunci] ?? 0), 0);
+  return {
+    dari,
+    sampai,
+    periode: periodeHuruf(dari, sampai),
+    hari,
+    total: {
+      totalAnggaran: jumlahkan('totalAnggaran'),
+      realisasi: jumlahkan('realisasi'),
+      selisih: jumlahkan('selisih'),
+    },
+  };
 }

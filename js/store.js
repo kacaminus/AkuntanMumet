@@ -51,10 +51,19 @@ export const totalNota = (n) => n.items.reduce((t, i) => t + i.qty * i.harga, 0)
 /** Tanggal-tanggal yang punya nota (urut naik). */
 export const tanggalAda = () => [...new Set(notaUrut().map((n) => n.tanggal))];
 
-/** Tanggal yang sedang dibuka di tab Nota / PO dan RAB (bawaan: tanggal terakhir yang ada notanya). */
-export function hariAktif() {
-  const tanggal = tanggalAda();
-  return tanggal.includes(state.hari) ? state.hari : tanggal.at(-1);
+/** Tanggal yang punya data RAB: ada nota, atau jumlah siswa sudah diisi, atau sedang dibuka di layar. */
+export const tanggalRab = () =>
+  [
+    ...new Set([
+      ...tanggalAda(),
+      ...Object.keys(state.rab).filter((t) => state.rab[t].siswa?.some((x) => Number(x) > 0)),
+      ...(state.hari ? [state.hari] : []),
+    ]),
+  ].sort();
+
+/** Tanggal yang sedang dibuka (bawaan: tanggal terakhir pada daftar). Untuk tab PO daftar = tanggalAda(), untuk RAB = tanggalRab(). */
+export function hariAktif(daftar = tanggalAda()) {
+  return daftar.includes(state.hari) ? state.hari : daftar.at(-1);
 }
 
 export const namaSheet = (n) => `PO_${pad(n.urut)}_${n.tanggal}`;

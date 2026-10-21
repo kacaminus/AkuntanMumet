@@ -333,3 +333,51 @@ select:focus {
 .navtgl .m {
   margin-left: 4px;
 }
+
+/* laporan Anggaran Bahan Makanan */
+.akun {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ang th {
+  background: #cfe2f3;
+  color: #000;
+  text-align: center;
+}
+.ang td {
+  vertical-align: top;
+}
+.ang td.c {
+  text-align: center;
+}
+.ang .kuning,
+.kuning {
+  background: #ffff00;
+}
+.ang .sur td {
+  background: #b3cefb;
+  font-weight: 700;
+}
+.ang .ptc td {
+  background: #ffe599;
+  font-weight: 700;
+}
+.ang .ptc td.tanpa {
+  background: none;
+  border: 0;
+}
+.ang a.tgl {
+  color: #000;
+  text-decoration: none;
+}
+.ang a.tgl:hover {
+  text-decoration: underline;
+}
+label.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 0 0 auto;
+}

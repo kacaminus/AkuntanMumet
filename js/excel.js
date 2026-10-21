@@ -1,15 +1,24 @@
 // Penghubung antara data aplikasi, pembuat Excel (excel-builder.js), dan pencetakan (sheet-html.js).
 // Hasilnya mengikuti tiga file contoh: PO_<BLN>.xlsx, LAPORAN_RAB_<BLN>.xlsx, BBBP_<BLN>.xlsx
-import { INSTANSI } from './config.js';
-import { buatBbbp, buatPO, buatRab, rakitBbbp, rakitPO, rakitRab } from './excel-builder.js';
-import { laporanBbbp, laporanRab, notaRentang, satuBulanPenuh } from './reports.js';
+import { ANGGARAN, INSTANSI, PAKET } from './config.js';
+import {
+  buatAnggaran,
+  buatBbbp,
+  buatPO,
+  buatRab,
+  rakitAnggaran,
+  rakitBbbp,
+  rakitPO,
+  rakitRab,
+} from './excel-builder.js';
+import { laporanAnggaran, laporanBbbp, laporanRab, notaRentang, satuBulanPenuh } from './reports.js';
 import { sheetKeHtml } from './sheet-html.js';
 import { namaSheet, nomorPO, notaUrut, state } from './store.js';
 import { $, hariIni, hariSebelum, tanggalIndo } from './utils.js';
 
 const SINGKATAN = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
 const MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-const TEMPLATE = { po: 'PO.xlsx', rab: 'RAB.xlsx', bbbp: 'BBBP.xlsx' };
+const TEMPLATE = { po: 'PO.xlsx', rab: 'RAB.xlsx', bbbp: 'BBBP.xlsx', anggaran: 'BBBP.xlsx' }; // kop anggaran memakai template BBBP
 const KERTAS_PX = { portrait: [794, 1123], landscape: [1123, 794] }; // A4 pada 96 dpi
 
 const unik = (daftar) => [...new Set(daftar)];
@@ -59,6 +68,17 @@ const dataBbbp = (dari, sampai) => {
   };
 };
 
+const dataAnggaran = (dari, sampai) => {
+  const laporan = laporanAnggaran(dari, sampai);
+  return {
+    periode: `Periode ${laporan.periode}`,
+    paket: PAKET,
+    hari: laporan.hari.map((h) => ({ tanggalTeks: tanggalIndo(h.tanggal), jumlah: h.jumlah, realisasi: h.realisasi })),
+    pembuat: { nama: ANGGARAN.pembuat, jabatan: INSTANSI.pembuat.jabatan },
+    mengetahui: { nama: ANGGARAN.mengetahui, jabatan: INSTANSI.mengetahui.jabatan },
+  };
+};
+
 const notaBulan = (bulan) => notaUrut().filter((n) => n.tanggal.startsWith(bulan));
 const pecahRentang = (id) => id.split('_'); // 'YYYY-MM-DD_YYYY-MM-DD' -> [dari, sampai]
 
@@ -69,6 +89,14 @@ const pecahRentang = (id) => id.split('_'); // 'YYYY-MM-DD_YYYY-MM-DD' -> [dari,
  */
 export async function siapkanExcel(jenis, id) {
   const template = await ambilTemplate(jenis);
+  if (jenis === 'anggaran') {
+    const [dari, sampai] = pecahRentang(id);
+    if (!laporanAnggaran(dari, sampai).hari.length) throw new Error('Belum ada data pada rentang tanggal ini.');
+    const nama = satuBulanPenuh(dari, sampai)
+      ? `ANGGARAN_${SINGKATAN[Number(dari.slice(5, 7)) - 1]}.xlsx`
+      : `ANGGARAN_${dari}_sd_${sampai}.xlsx`;
+    return { buffer: await buatAnggaran(ExcelJS, template, dataAnggaran(dari, sampai)), nama };
+  }
   if (jenis === 'bbbp') {
     const [dari, sampai] = pecahRentang(id);
     if (!notaRentang(dari, sampai).length) throw new Error('Belum ada data pada rentang tanggal ini.');
@@ -126,6 +154,12 @@ export async function susunCetak(jenis, id) {
       sheetKeHtml(ws, workbook, { kolom: [8, 13], baris: [1, 34] }),
     ];
     blok.forEach((b) => (b.cocokTinggi = true));
+  } else if (jenis === 'anggaran') {
+    const [dari, sampai] = pecahRentang(id);
+    if (!laporanAnggaran(dari, sampai).hari.length) throw new Error('Belum ada data pada rentang tanggal ini.');
+    workbook = await rakitAnggaran(ExcelJS, template, dataAnggaran(dari, sampai));
+    const ws = workbook.worksheets[0];
+    blok = [sheetKeHtml(ws, workbook, { logoUrl: logoUrl(workbook, ws) })];
   } else {
     const [dari, sampai] = pecahRentang(id);
     if (!notaRentang(dari, sampai).length) throw new Error('Belum ada data pada rentang tanggal ini.');
@@ -140,7 +174,11 @@ export async function susunCetak(jenis, id) {
   const html = blok
     .map((b, i) => {
       // muat satu halaman, dengan ruang cadangan 5% agar tidak ada halaman kosong/terpotong di browser berbeda
-      const skala = Math.min(1, bolehLebar / b.lebar, jenis === 'bbbp' ? 1 : (bolehTinggi * 0.95) / b.tinggi);
+      const skala = Math.min(
+        1,
+        bolehLebar / b.lebar,
+        ['bbbp', 'anggaran'].includes(jenis) ? 1 : (bolehTinggi * 0.95) / b.tinggi,
+      );
       return `<div style="${i ? 'page-break-before:always;' : ''}zoom:${skala}">${b.html}</div>`;
     })
     .join('');
