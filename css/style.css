@@ -1,141 +1,340 @@
+/* =====================================================================
+   Belanja SPPG - tampilan: minimalis, estetik, berwarna, kontras
+   Referensi: kartu putih membulat + latar lembut (Mutmiz), navigasi hitam + aksen cerah (Axon),
+   aksen hangat kuning/koral (dashboard). Dokumen (.sheet) tetap putih ala kertas agar sama dengan Excel.
+   ===================================================================== */
 :root {
-  --p: #5a81fa;
-  --s: #2c3d8f;
-  --ink: #1f1f1f;
-  --g1: #6a6f83;
-  --g2: #a9b0cf;
-  --b1: #cddeff;
-  --b2: #f2f5ff;
-  --b3: #f8f9fd;
-  --w: #fff;
-  --bad: #d14343;
+  --bg: #f3f1fa;
+  --ink: #14122b; /* teks utama: hampir hitam, kontras tinggi */
+  --muted: #6f6b8a;
+  --line: #e7e4f3;
+  --card: #fff;
+
+  --violet: #6c4df6;
+  --violet-d: #5237d8;
+  --violet-s: #ece8ff;
+  --coral: #ff6b57;
+  --coral-s: #ffe9e5;
+  --yellow: #f7c23e;
+  --yellow-s: #fff3cf;
+  --green: #22b884;
+  --green-s: #dcf5ea;
+  --sky: #4da6ff;
+  --sky-s: #e0f0ff;
+  --pink: #f36bc1;
+  --pink-s: #fde6f4;
+
+  --radius: 24px;
+  --shadow: 0 1px 2px rgba(20, 18, 43, 0.04), 0 14px 34px rgba(80, 60, 170, 0.08);
 }
+
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-  background: var(--b3);
   color: var(--ink);
+  background: var(--bg);
   font:
     400 14px/1.55 Poppins,
     system-ui,
     sans-serif;
+  font-variant-numeric: tabular-nums;
 }
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 18px 20px 0;
-  max-width: 1000px;
-  margin: auto;
+/* hiasan latar: dua cahaya lembut di pojok */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(760px 420px at 100% -8%, rgba(108, 77, 246, 0.2), transparent 62%),
+    radial-gradient(620px 420px at -8% 108%, rgba(255, 107, 87, 0.15), transparent 62%),
+    radial-gradient(420px 300px at 70% 112%, rgba(247, 194, 62, 0.16), transparent 65%);
 }
+
 h1 {
-  font:
-    600 20px Poppins,
-    sans-serif;
   margin: 0;
-  color: var(--s);
+  font:
+    600 19px/1.2 Poppins,
+    sans-serif;
+  letter-spacing: -0.01em;
 }
 h2 {
-  font: 600 17px Poppins;
   margin: 0 0 12px;
-  color: var(--s);
+  font: 600 17px Poppins;
+}
+h2.besar {
+  margin: 0;
+  font: 600 26px/1.15 Poppins;
+  letter-spacing: -0.02em;
 }
 small,
 .m {
-  color: var(--g1);
+  color: var(--muted);
 }
+.galat {
+  color: var(--coral);
+  font-weight: 600;
+}
+a {
+  color: var(--violet);
+}
+
+/* ---------- kerangka ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 20px 20px 0;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.logo {
+  width: 46px;
+  height: 46px;
+  padding: 5px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 6px 20px 56px;
+}
+
 nav {
   display: flex;
   gap: 4px;
-  background: var(--w);
-  margin: 14px auto;
-  padding: 5px;
-  border-radius: 999px;
-  box-shadow: 0 8px 28px rgba(90, 129, 250, 0.12);
+  max-width: calc(100% - 40px);
+  width: max-content;
+  margin: 18px auto 14px;
+  padding: 6px;
   overflow-x: auto;
-  max-width: 560px;
-  width: calc(100% - 32px);
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow);
 }
 nav:empty {
   display: none;
 }
 nav button {
-  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
   border: 0;
-  background: none;
-  color: var(--g1);
-  padding: 9px 16px;
   border-radius: 999px;
+  background: none;
+  color: var(--muted);
   font: 500 13px Poppins;
-  cursor: pointer;
   white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+nav button:hover {
+  color: var(--ink);
+  background: var(--bg);
 }
 nav button.on {
-  background: var(--p);
-  color: var(--w);
+  background: var(--ink); /* aktif: hitam pekat = kontras */
+  color: #fff;
 }
-main {
-  padding: 8px 16px 40px;
-  max-width: 1000px;
-  margin: auto;
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
 }
+
+/* ---------- kartu & formulir ---------- */
 .card {
-  background: var(--w);
-  border-radius: 20px;
-  padding: 18px;
   margin-bottom: 16px;
-  box-shadow: 0 8px 28px rgba(90, 129, 250, 0.1);
+  padding: 22px;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.banner {
+  background: var(--yellow-s);
+  box-shadow: none;
+  border: 1.5px solid var(--yellow);
 }
 .row {
   display: flex;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 12px;
+}
+.between {
+  align-items: center;
+  justify-content: space-between;
+}
+.mt {
+  margin-top: 12px;
 }
 label {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--g1);
   flex: 1;
+  flex-direction: column;
+  gap: 5px;
   min-width: 150px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
 }
-input {
-  font: 400 14px Poppins;
+label.inline {
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+input,
+select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: #faf9fe;
   color: var(--ink);
-  background: var(--b2);
-  border: 1px solid var(--b1);
-  border-radius: 12px;
-  padding: 9px 12px;
-  width: 100%;
+  font: 400 14px Poppins;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
 }
-input:focus {
-  outline: 2px solid var(--p);
-  background: var(--w);
+input:focus,
+select:focus {
+  outline: 0;
+  border-color: var(--violet);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(108, 77, 246, 0.14);
 }
+
+.btn {
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--violet);
+  color: #fff;
+  font: 500 13px Poppins;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+}
+.btn:hover {
+  background: var(--violet-d);
+}
+.btn:active {
+  transform: scale(0.98);
+}
+.btn.g {
+  background: var(--violet-s);
+  color: var(--violet-d);
+}
+.btn.g:hover {
+  background: #ded7ff;
+}
+.btn.d {
+  background: none;
+  color: var(--coral);
+  box-shadow: inset 0 0 0 1.5px var(--coral);
+}
+.btn.d:hover {
+  background: var(--coral-s);
+}
+.btn.ikon {
+  flex: 0 0 auto;
+  padding: 6px 16px;
+  font-size: 20px;
+  line-height: 1;
+}
+.btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.tabs button {
+  padding: 7px 15px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  font: 500 12px Poppins;
+  box-shadow: 0 1px 2px rgba(20, 18, 43, 0.06);
+  cursor: pointer;
+}
+.tabs button:hover {
+  color: var(--ink);
+}
+.tabs .on {
+  background: var(--ink);
+  color: #fff;
+}
+.navtgl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.navtgl select {
+  flex: 1 1 160px;
+  max-width: 280px;
+  border-radius: 999px;
+  background: var(--card);
+}
+.navtgl .m {
+  margin-left: 4px;
+}
+
+/* tabel pada formulir (bukan dokumen): ringan, tanpa kotak */
 table {
-  border-collapse: collapse;
   width: 100%;
+  border-collapse: collapse;
 }
 th,
 td {
-  border: 1px solid var(--b1);
-  padding: 5px 8px;
+  padding: 8px 10px;
   text-align: left;
 }
 th {
-  background: var(--b2);
-  font: 500 12px Poppins;
-  color: var(--s);
+  border-bottom: 1.5px solid var(--line);
+  color: var(--muted);
+  font: 600 11px Poppins;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+td {
+  border-bottom: 1px solid var(--line);
 }
 td input {
+  padding: 6px 8px;
   border: 0;
+  border-radius: 8px;
   background: transparent;
-  padding: 5px;
+}
+td input:focus {
+  background: var(--violet-s);
+  box-shadow: none;
 }
 .r {
   text-align: right;
@@ -143,105 +342,6 @@ td input {
 .c {
   text-align: center;
 }
-.btn {
-  background: var(--p);
-  color: var(--w);
-  border: 0;
-  border-radius: 999px;
-  padding: 10px 20px;
-  font: 500 13px Poppins;
-  cursor: pointer;
-}
-.btn:hover {
-  background: var(--s);
-}
-.btn.g {
-  background: var(--b2);
-  color: var(--p);
-}
-.btn.d {
-  background: none;
-  color: var(--bad);
-  border: 1px solid var(--bad);
-}
-.tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-.tabs button {
-  border: 0;
-  background: var(--w);
-  color: var(--g1);
-  border-radius: 999px;
-  padding: 6px 14px;
-  cursor: pointer;
-  font: 500 12px Poppins;
-  box-shadow: 0 2px 8px rgba(90, 129, 250, 0.1);
-}
-.tabs .on {
-  background: var(--s);
-  color: var(--w);
-}
-.sheet {
-  background: var(--w);
-  color: #000;
-  font-family: 'Times New Roman', serif;
-  padding: 20px;
-  border-radius: 20px;
-  overflow-x: auto;
-  box-shadow: 0 8px 28px rgba(90, 129, 250, 0.1);
-}
-.sheet th {
-  background: var(--b1);
-  color: #000;
-  font-family: inherit;
-  font-size: 13px;
-}
-.sheet td,
-.sheet th {
-  border-color: #000;
-}
-.sheet td input {
-  color: #000;
-}
-.hl td {
-  background: var(--b2);
-}
-.tot td {
-  background: var(--b1);
-  font-weight: 700;
-}
-.warn {
-  color: var(--bad);
-  font-weight: 600;
-}
-.sig {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 36px;
-  text-align: center;
-}
-@media print {
-  header,
-  nav,
-  .noprint {
-    display: none !important;
-  }
-  body {
-    background: #fff;
-  }
-  main {
-    padding: 0;
-    max-width: none;
-  }
-  .sheet {
-    box-shadow: none;
-    padding: 0;
-  }
-}
-
 .w80 {
   width: 80px;
 }
@@ -252,14 +352,61 @@ td input {
   width: 120px;
 }
 .link-del {
-  background: none;
   border: 0;
-  color: var(--bad);
-  font-size: 18px;
+  background: none;
+  color: var(--coral);
+  font-size: 20px;
   cursor: pointer;
 }
+.warn {
+  color: var(--coral);
+  font-weight: 600;
+}
+
+/* ---------- dokumen (RAB, PO, BBBP, Anggaran): putih seperti kertas, sama dengan Excel ---------- */
+.sheet {
+  padding: 22px;
+  overflow-x: auto;
+  border-radius: var(--radius);
+  background: #fff;
+  color: #000;
+  font-family: 'Times New Roman', serif;
+  box-shadow: var(--shadow);
+}
+.sheet table {
+  width: 100%;
+}
+.sheet th,
+.sheet td {
+  padding: 2px 6px;
+  border: 1px solid #000;
+  color: #000;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.sheet th {
+  background: #cfe2f3;
+  font:
+    700 13px 'Times New Roman',
+    serif;
+  text-align: center;
+}
+.sheet td input {
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: #fffbd6;
+  color: #000;
+}
+.hl td {
+  background: #fffbe0;
+}
+.tot td {
+  background: #cfe2f3;
+  font-weight: 700;
+}
 .sheet-po {
-  max-width: 720px;
+  max-width: 740px;
   margin: auto;
 }
 .kop {
@@ -268,70 +415,11 @@ td input {
 .info {
   color: #000;
 }
-.mt {
-  margin-top: 10px;
-}
-
-.banner {
-  background: var(--b1);
-  color: var(--s);
-}
-/* Area cetak: berisi hasil ubah sheet Excel -> HTML (js/sheet-html.js); hanya tampil saat mencetak */
-#area-cetak {
-  display: none;
-}
-@media print {
-  header,
-  nav,
-  main {
-    display: none !important;
-  }
-  #area-cetak {
-    display: block;
-  }
-  #area-cetak tr {
-    page-break-inside: avoid;
-  }
-}
-
-select {
-  font: 400 14px Poppins;
-  color: var(--ink);
-  background: var(--b2);
-  border: 1px solid var(--b1);
-  border-radius: 12px;
-  padding: 9px 12px;
-}
-select:focus {
-  outline: 2px solid var(--p);
-  background: var(--w);
-}
-/* navigasi tanggal ringkas (tab Nota / PO dan RAB) */
-.navtgl {
+.sig {
   display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-.navtgl select {
-  flex: 1 1 160px;
-  max-width: 280px;
-}
-.btn.ikon {
-  padding: 6px 16px;
-  font-size: 20px;
-  line-height: 1;
-}
-.btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-.btn.ikon {
-  flex: 0 0 auto;
-}
-.navtgl .m {
-  margin-left: 4px;
+  justify-content: space-between;
+  margin-top: 36px;
+  text-align: center;
 }
 
 /* laporan Anggaran Bahan Makanan */
@@ -342,8 +430,6 @@ select:focus {
 }
 .ang th {
   background: #cfe2f3;
-  color: #000;
-  text-align: center;
 }
 .ang td {
   vertical-align: top;
@@ -351,9 +437,9 @@ select:focus {
 .ang td.c {
   text-align: center;
 }
-.ang .kuning,
-.kuning {
-  background: #ffff00;
+.kuning,
+.ang .kuning {
+  background: #ff0;
 }
 .ang .sur td {
   background: #b3cefb;
@@ -364,8 +450,8 @@ select:focus {
   font-weight: 700;
 }
 .ang .ptc td.tanpa {
-  background: none;
   border: 0;
+  background: none;
 }
 .ang a.tgl {
   color: #000;
@@ -374,10 +460,202 @@ select:focus {
 .ang a.tgl:hover {
   text-decoration: underline;
 }
-label.inline {
-  flex-direction: row;
+
+/* ---------- Ringkasan ---------- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.kpi {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  --aksen: var(--violet);
+  --aksen-s: var(--violet-s);
+}
+.kpi::after {
+  content: '';
+  position: absolute;
+  top: -34px;
+  right: -34px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: var(--aksen-s);
+  opacity: 0.9;
+}
+.kpi .ikon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--aksen);
+  color: #fff;
+  font: 600 12px Poppins;
+}
+.kpi p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+}
+.kpi .judul {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.kpi .nilai {
+  margin-top: 2px;
+  font: 600 22px/1.2 Poppins;
+  letter-spacing: -0.02em;
+}
+.kpi .ket {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 14px;
+}
+.grid2 .card {
+  margin: 0;
+}
+.legenda {
+  display: flex;
+  gap: 16px;
+  margin: 2px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.legenda span {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-width: 0;
-  flex: 0 0 auto;
+}
+.grafik svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.gris {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.bar-a {
+  fill: #cfc6ff;
+}
+.bar-r {
+  fill: var(--violet);
+}
+.bar-over {
+  fill: var(--coral);
+}
+.sumbu {
+  fill: var(--muted);
+  font: 500 10px Poppins;
+}
+.perhatian {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.perhatian a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  background: #faf9fe;
+  color: var(--ink);
+  font-size: 13px;
+  text-decoration: none;
+}
+.perhatian a:hover {
+  background: var(--violet-s);
+}
+.pill {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pill.merah {
+  background: var(--coral-s);
+  color: #d83a26;
+}
+.pill.kuning {
+  background: var(--yellow-s);
+  color: #9a6b00;
+}
+.pill.biru {
+  background: var(--sky-s);
+  color: #1e72c8;
+}
+.pill.hijau {
+  background: var(--green-s);
+  color: #138a62;
+}
+.kosong {
+  padding: 28px 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+@media (max-width: 860px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    padding: 16px;
+  }
+  main,
+  .topbar {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+/* ---------- cetak ---------- */
+/* Area cetak berisi hasil ubah sheet Excel -> HTML (js/sheet-html.js); hanya tampil saat mencetak */
+#area-cetak {
+  display: none;
+}
+@media print {
+  body::before,
+  .topbar,
+  nav,
+  main,
+  .noprint {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  #area-cetak {
+    display: block;
+  }
+  #area-cetak tr {
+    page-break-inside: avoid;
+  }
 }
