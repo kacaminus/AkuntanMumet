@@ -8,15 +8,37 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/style.css" />
     <style id="gaya-halaman"></style>
+    <script>
+      // Bila aplikasi gagal dimuat (mis. ada berkas JS yang belum diganti), tampilkan pesannya di layar
+      // sehingga tidak terlihat macet di "memuat...". Detail lengkap ada di Console (tekan F12).
+      const tampilkanGalat = (pesan) => {
+        const status = document.getElementById('status');
+        if (!status) return;
+        status.textContent = 'Gagal memuat aplikasi: ' + pesan;
+        status.classList.add('galat');
+      };
+      window.addEventListener(
+        'error',
+        (e) => {
+          if (e.target && e.target.tagName && e.target.tagName !== 'SCRIPT') return; // abaikan gambar yang gagal
+          tampilkanGalat(e.message || 'tidak bisa memuat ' + (e.target && e.target.src));
+        },
+        true,
+      );
+      window.addEventListener('unhandledrejection', (e) => tampilkanGalat((e.reason && e.reason.message) || 'kesalahan'));
+    </script>
     <!-- ExcelJS: membuat file .xlsx dengan format persis template (js/excel-builder.js) -->
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script type="module" src="js/main.js"></script>
   </head>
   <body>
-    <header>
-      <div>
-        <h1>Belanja Bahan Pangan · SPPG</h1>
-        <small id="status">memuat…</small>
+    <header class="topbar">
+      <div class="brand">
+        <img class="logo" src="templates/logo.png" alt="" />
+        <div>
+          <h1>Belanja Bahan Pangan</h1>
+          <small id="status">memuat…</small>
+        </div>
       </div>
       <div class="noprint">
         <button class="btn g" data-act="keluar">Keluar</button>
