@@ -642,11 +642,11 @@ td input:focus {
   display: none;
 }
 @media print {
-  body::before,
-  .topbar,
-  nav,
-  main,
-  .noprint {
+  /* Cetak HANYA isi dokumen: sembunyikan semua elemen lain (judul, status/email, menu, tombol, latar, dll.) */
+  body > *:not(#area-cetak) {
+    display: none !important;
+  }
+  body::before {
     display: none !important;
   }
   body {
