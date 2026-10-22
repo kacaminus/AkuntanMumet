@@ -1,6 +1,7 @@
 // State aplikasi, akses database Supabase, dan fungsi pencarian data.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-import { SUPABASE_URL, SUPABASE_KEY, INSTANSI } from './config.js';
+import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
+import { INSTANSI } from './instansi.js';
 import { BAHAN, SUPPLIER } from './master-data.js';
 import { akhirBulan, hariIni, maks, pad, ROMAWI } from './utils.js';
 
@@ -18,7 +19,7 @@ export const draftBaru = (tanggal = hariIni()) => ({
 
 export const state = {
   user: null,
-  tab: 'input', // input | po | rab | bbbp | login
+  tab: 'ringkasan', // ringkasan | input | po | rab | anggaran | bbbp | login
   hari: null, // tanggal yang sedang dibuka di tab Nota / PO dan RAB (null = tanggal terakhir)
   notaId: null, // nota yang sedang dibuka pada tanggal itu (null = nota pertama)
   rentang: null, // rentang tanggal BBBP { dari, sampai }; null = bulan terakhir yang ada datanya

@@ -1,5 +1,5 @@
 // Menyusun data laporan (PO, RAB, BBBP). Dipakai bersama oleh tampilan dan ekspor Excel.
-import { PAKET } from './config.js';
+import { PAKET } from './instansi.js';
 import { SEKOLAH } from './master-data.js';
 import { namaSheet, nomorPO, notaUrut, state, totalNota } from './store.js';
 import { akhirBulan, bulanIndo, hariSebelum, periodeHuruf, tanggalIndo, tanggalPanjang } from './utils.js';

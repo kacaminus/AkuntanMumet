@@ -27,12 +27,14 @@ import {
   renderLogin,
   renderPO,
   renderRab,
+  renderRingkasan,
   totalDraft,
 } from './views.js';
 import { $, akhirBulan, rupiah } from './utils.js';
 
 const TAMPILAN = {
   login: renderLogin,
+  ringkasan: renderRingkasan,
   input: renderInput,
   po: renderPO,
   rab: renderRab,
@@ -40,11 +42,12 @@ const TAMPILAN = {
   bbbp: renderBbbp,
 };
 const TAB = [
-  ['input', 'Input Nota'],
-  ['po', 'Nota / PO'],
-  ['rab', 'RAB Harian'],
-  ['anggaran', 'Anggaran'],
-  ['bbbp', 'BBBP'],
+  ['ringkasan', 'Ringkasan', 'violet'],
+  ['input', 'Input Nota', 'pink'],
+  ['po', 'Nota / PO', 'sky'],
+  ['rab', 'RAB Harian', 'yellow'],
+  ['anggaran', 'Anggaran', 'green'],
+  ['bbbp', 'BBBP', 'coral'],
 ];
 
 // Daftar tanggal yang dipakai navigasi: tab RAB boleh membuka tanggal tanpa nota, tab PO hanya tanggal bernota.
@@ -53,8 +56,8 @@ const daftarTab = () => (state.tab === 'rab' ? tanggalRab() : tanggalAda());
 function render() {
   $('#nav').innerHTML = state.user
     ? TAB.map(
-        ([id, label]) =>
-          `<button class="${state.tab === id ? 'on' : ''}" data-act="tab" data-tab="${id}">${label}</button>`,
+        ([id, label, warna]) =>
+          `<button class="${state.tab === id ? 'on' : ''}" data-act="tab" data-tab="${id}"><i class="dot" style="background:var(--${warna})"></i>${label}</button>`,
       ).join('')
     : '';
   $('#app').innerHTML = TAMPILAN[state.tab]();
@@ -260,7 +263,7 @@ sb.auth.onAuthStateChange((_peristiwa, sesi) => {
     } else {
       $('#status').textContent = `${state.user.email} · data tersimpan di Supabase`;
       await muatData();
-      if (state.tab === 'login') state.tab = 'input';
+      if (state.tab === 'login') state.tab = 'ringkasan';
     }
     render();
   });

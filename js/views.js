@@ -1,8 +1,8 @@
 // Tampilan: setiap fungsi render* mengembalikan string HTML untuk area utama.
 // Interaksi memakai atribut data-act / data-chg / data-inp yang ditangani di main.js.
-import { ANGGARAN, INSTANSI, KOP_PO, PAKET } from './config.js';
+import { ANGGARAN, INSTANSI, KOP_PO, PAKET } from './instansi.js';
 import { SEKOLAH } from './master-data.js';
-import { laporanAnggaran, laporanBbbp, laporanPO, laporanRab } from './reports.js';
+import { laporanAnggaran, laporanBbbp, laporanPO, laporanRab, notaRentang } from './reports.js';
 import {
   hariAktif,
   namaSheet,
@@ -292,4 +292,95 @@ export function renderAnggaran() {
       <div class="sig"><div style="margin-left:48%">Dibuat Oleh,<br><br><br><br><b><u>${ANGGARAN.pembuat}</u></b><br>${INSTANSI.pembuat.jabatan}</div>
         <div>Diketahui Oleh,<br><br><br><br><b><u>${ANGGARAN.mengetahui}</u></b><br>${INSTANSI.mengetahui.jabatan}</div></div>
     </div>`;
+}
+
+// ---------- Ringkasan (beranda): kartu angka + grafik anggaran vs realisasi + hal yang perlu perhatian ----------
+function grafikAnggaran(hari) {
+  const W = 640;
+  const H = 230;
+  const kiri = 6;
+  const atas = 14;
+  const tinggi = H - atas - 26;
+  const maks = Math.max(1, ...hari.flatMap((h) => [h.totalAnggaran, h.realisasi ?? 0]));
+  const lebarGrup = (W - kiri * 2) / hari.length;
+  const bar = Math.min(18, lebarGrup * 0.36);
+  const y = (v) => atas + tinggi - (v / maks) * tinggi;
+  const dasar = atas + tinggi;
+  const garis = [0, 0.5, 1]
+    .map(
+      (p) =>
+        `<line stroke="#e7e4f3" stroke-width="1" x1="${kiri}" x2="${W - kiri}" y1="${atas + tinggi * (1 - p)}" y2="${atas + tinggi * (1 - p)}"/>`,
+    )
+    .join('');
+  const batang = hari
+    .map((h, i) => {
+      const real = h.realisasi ?? 0;
+      const x0 = kiri + i * lebarGrup + (lebarGrup - bar * 2 - 3) / 2;
+      const info = `${tanggalIndo(h.tanggal)} - anggaran ${rupiah(h.totalAnggaran)}, realisasi ${h.realisasi === null ? 'belum ada' : rupiah(real)}`;
+      return `<g><title>${esc(info)}</title>
+        <rect fill="#cfc6ff" x="${x0}" y="${y(h.totalAnggaran)}" width="${bar}" height="${dasar - y(h.totalAnggaran)}" rx="4"/>
+        <rect fill="${real > h.totalAnggaran ? '#ff6b57' : '#6c4df6'}" x="${x0 + bar + 3}" y="${y(real)}" width="${bar}" height="${dasar - y(real)}" rx="4"/>
+        <text fill="#6f6b8a" font-size="10" font-weight="500" font-family="Poppins, sans-serif" x="${kiri + i * lebarGrup + lebarGrup / 2}" y="${H - 8}" text-anchor="middle">${Number(h.tanggal.slice(8))}</text></g>`;
+    })
+    .join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafik anggaran dan realisasi per hari">${garis}${batang}</svg>`;
+}
+
+export function renderRingkasan() {
+  const bulan = [...new Set(tanggalRab().map((t) => t.slice(0, 7)))];
+  const { dari, sampai } = rentangBbbp();
+  const lap = laporanAnggaran(dari, sampai);
+  const jumlahNota = notaRentang(dari, sampai).length;
+  const pilihBulan = (b) =>
+    `<button class="${dari === `${b}-01` && sampai === akhirBulan(b) ? 'on' : ''}" data-act="rentangBulan" data-bulan="${b}">${bulanIndo(b)}</button>`;
+
+  // hari yang perlu ditindaklanjuti
+  const perhatian = lap.hari.flatMap((h) => {
+    if (h.realisasi === null) return [{ h, kelas: 'kuning', teks: 'Belum ada nota' }];
+    if (h.totalAnggaran === 0) return [{ h, kelas: 'biru', teks: 'Siswa belum diisi' }];
+    if (h.selisih < 0) return [{ h, kelas: 'merah', teks: `Lebih ${rupiah(-h.selisih)}` }];
+    return [];
+  });
+  const kartu = (aksen, simbol, judul, nilai, ket) => `
+    <div class="card kpi" style="--aksen:var(--${aksen});--aksen-s:var(--${aksen}-s)">
+      <span class="ikon">${simbol}</span><p class="judul">${judul}</p><p class="nilai">${nilai}</p><p class="ket">${ket}</p>
+    </div>`;
+  const surplus = lap.total.selisih >= 0;
+  const isi = lap.hari.length
+    ? `
+    <div class="kpi-grid">
+      ${kartu('violet', 'Rp', 'Total anggaran', rupiah(lap.total.totalAnggaran), `${lap.hari.length} hari`)}
+      ${kartu('sky', 'Rp', 'Realisasi belanja', rupiah(lap.total.realisasi), `${jumlahNota} nota`)}
+      ${kartu(surplus ? 'green' : 'coral', surplus ? '+' : '!', surplus ? 'Sisa anggaran' : 'Melebihi pagu', rupiah(Math.abs(lap.total.selisih)), 'anggaran - realisasi')}
+      ${kartu('yellow', String(perhatian.length), 'Perlu perhatian', `${perhatian.length} hari`, perhatian.length ? 'lihat daftar di samping' : 'semua beres')}
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h2>Anggaran vs realisasi per hari</h2>
+        <div class="legenda"><span><i class="dot" style="background:#cfc6ff"></i>Anggaran</span><span><i class="dot" style="background:var(--violet)"></i>Realisasi</span><span><i class="dot" style="background:var(--coral)"></i>Melebihi pagu</span></div>
+        <div class="grafik">${grafikAnggaran(lap.hari)}</div>
+      </div>
+      <div class="card">
+        <h2>Perlu perhatian</h2>
+        ${
+          perhatian.length
+            ? `<ul class="perhatian">${perhatian
+                .map(
+                  ({ h, kelas, teks }) =>
+                    `<li><a href="#" data-act="keRab" data-tanggal="${h.tanggal}"><span>${tanggalIndo(h.tanggal)}</span><span class="pill ${kelas}">${teks}</span></a></li>`,
+                )
+                .join('')}</ul>`
+            : '<p class="kosong">Semua hari sesuai anggaran.</p>'
+        }
+      </div>
+    </div>`
+    : `<div class="card kosong"><h2>Belum ada data pada periode ini</h2>
+        <p>Mulai dengan menyimpan nota pertama, lalu isi jumlah siswa di tab RAB Harian.</p></div>`;
+  return `
+    <div class="row between" style="margin:6px 0 14px">
+      <div><h2 class="besar">Ringkasan</h2><p class="m" style="margin:2px 0 0">Periode ${lap.periode}</p></div>
+      <button class="btn" data-act="tab" data-tab="input">+ Nota baru</button>
+    </div>
+    ${bulan.length ? `<div class="tabs">${bulan.map(pilihBulan).join('')}</div>` : ''}
+    ${isi}`;
 }

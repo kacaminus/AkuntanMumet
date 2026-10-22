@@ -1,6 +1,6 @@
 // Penghubung antara data aplikasi, pembuat Excel (excel-builder.js), dan pencetakan (sheet-html.js).
 // Hasilnya mengikuti tiga file contoh: PO_<BLN>.xlsx, LAPORAN_RAB_<BLN>.xlsx, BBBP_<BLN>.xlsx
-import { ANGGARAN, INSTANSI, PAKET } from './config.js';
+import { ANGGARAN, INSTANSI, PAKET } from './instansi.js';
 import {
   buatAnggaran,
   buatBbbp,
